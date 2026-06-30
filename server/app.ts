@@ -17,6 +17,7 @@ import { reportsRouter } from "./routes/reports.js";
 import { notificationsRouter } from "./routes/notifications.js";
 import { livesRouter } from "./routes/lives.js";
 import { adminRouter } from "./routes/admin.js";
+import { ensureTables } from "./migrate.js";
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
@@ -69,6 +70,19 @@ export function createApp() {
   app.use("/api/notifications", notificationsRouter);
   app.use("/api/lives", livesRouter);
   app.use("/api/admin", adminRouter);
+  app.post("/api/db-migrate", async (req, res) => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret || req.headers["x-migrate-secret"] !== secret) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+    try {
+      await ensureTables();
+      res.json({ ok: true, message: "Tables created/verified." });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
   app.use("/api", (_request, response) => {
     response.status(404).json({ error: "API route not found." });
   });
