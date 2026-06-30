@@ -171,7 +171,7 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
 
         {/* Bookmark */}
         <button onClick={handleSave} className="flex flex-col items-center gap-1">
-          <div className={`p-2 rounded-full ${saved ? "text-yellow-400" : "text-white"}`}>
+          <div className={`p-2 rounded-full ${saved ? "text-green-400" : "text-white"}`}>
             <BookmarkIcon
               className="w-7 h-7"
               fill={saved ? "currentColor" : "none"}
@@ -183,7 +183,7 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
 
         {/* Share */}
         <button onClick={handleShare} className="flex flex-col items-center gap-1">
-          <div className="p-2 rounded-full text-white">
+          <div className="p-2 rounded-full text-blue-400">
             <Share2 className="w-7 h-7" strokeWidth={1.5} />
           </div>
           <span className="text-white text-xs font-semibold">Partilhar</span>

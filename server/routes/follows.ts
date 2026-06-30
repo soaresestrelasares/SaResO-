@@ -25,6 +25,15 @@ followsRouter.post("/:userId", authMiddleware, async (req: AuthRequest, res) => 
       .where(sql`follower_id = ${followerId} AND following_id = ${followingId}`);
     res.json({ following: false });
   } else {
+    // Limite de 5000 seguidos
+    const [countRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(follows)
+      .where(eq(follows.followerId, followerId));
+    if (Number(countRow?.count ?? 0) >= 5000) {
+      res.status(400).json({ error: "Atingiste o limite de 5000 seguidos." });
+      return;
+    }
     await db.insert(follows).values({ followerId, followingId });
     // Trigger follow notification
     try {
