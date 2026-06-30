@@ -4,6 +4,7 @@ import { jobs, companies, jobApplications, users, notifications } from "../schem
 import { eq, desc, like, and, or, sql } from "drizzle-orm";
 import { authMiddleware, optionalAuth, AuthRequest } from "../middleware/auth.js";
 import { moderateContent } from "../middleware/moderation.js";
+import { canCompanyPostJob } from "./companies.js";
 
 export const jobsRouter = Router();
 
@@ -101,10 +102,20 @@ jobsRouter.post("/", authMiddleware, moderateContent, async (req: AuthRequest, r
     res.status(400).json({ error: "companyId, title e description obrigatórios" });
     return;
   }
-  // Verify ownership
+  // Verify ownership and active subscription
   const [company] = await db.select().from(companies).where(eq(companies.id, companyId)).limit(1);
   if (!company || Number(company.ownerId) !== req.userId!) {
     res.status(403).json({ error: "Sem permissão" });
+    return;
+  }
+  const active = await canCompanyPostJob(companyId);
+  if (!active) {
+    res.status(403).json({
+      error: "Subscrição da empresa inativa. Renova o plano para publicar vagas.",
+      subscriptionStatus: company.subscriptionStatus,
+      trialEndsAt: company.trialEndsAt,
+      subscriptionEndsAt: company.subscriptionEndsAt,
+    });
     return;
   }
   const [result] = await db.insert(jobs).values({

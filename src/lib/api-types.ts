@@ -59,6 +59,12 @@ export interface Company {
   website: string | null;
   industry: string | null;
   location: string | null;
+  subscriptionStatus: "trial" | "active" | "expired";
+  subscriptionPlan: string | null;
+  trialEndsAt: string;
+  subscriptionEndsAt: string | null;
+  stripeSubscriptionId: string | null;
+  isActive: boolean;
   createdAt: string;
   jobs?: Job[];
 }

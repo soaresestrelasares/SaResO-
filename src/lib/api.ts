@@ -62,7 +62,7 @@ export const api = {
   }) => request<{ id: number }>("/videos", { method: "POST", body: JSON.stringify(data) }),
   likeVideo: (id: number) => request<{ liked: boolean }>(`/videos/${id}/like`, { method: "POST" }),
   saveVideo: (id: number) => request<{ saved: boolean }>(`/videos/${id}/save`, { method: "POST" }),
-  getSavedVideos: () => request<Video[]>('/videos/saved'),
+  getSavedVideos: () => request<Video[]>("/videos/saved"),
 
   // Comments
   getComments: (videoId: number) => request<Comment[]>(`/comments/${videoId}`),
@@ -75,8 +75,7 @@ export const api = {
     request<User>("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
   updateProfile: (data: Partial<User> & { username?: string }) =>
     request<User>("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
-  getUserOnline: (username: string) =>
-    request<{ online: boolean }>(`/users/${username}/online`),
+  getUserOnline: (username: string) => request<{ online: boolean }>(`/users/${username}/online`),
   blockUser: (userId: number) =>
     request<{ ok: boolean }>(`/users/block/${userId}`, { method: "POST" }),
   unblockUser: (userId: number) =>
@@ -93,7 +92,7 @@ export const api = {
 
   // Companies
   createCompany: (data: Partial<Company>) =>
-    request<{ id: number; name: string }>("/companies", {
+    request<{ id: number; name: string; status: string; trialDays: number }>("/companies", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -165,18 +164,28 @@ export const api = {
   subscribeToCreator: (creatorId: number) =>
     request<{ subscribed: boolean }>(`/creators/${creatorId}/subscribe`, { method: "POST" }),
   getSubscribeStatus: (creatorId: number) =>
-    request<{ subscribed: boolean; subscribersCount: number }>(`/creators/${creatorId}/subscribe-status`),
-  getCreatorSubscribers: (creatorId: number) =>
-    request<{ id: number; username: string; displayName: string; avatarUrl: string | null; subscribedAt: string }[]>(
-      `/creators/${creatorId}/subscribers`,
+    request<{ subscribed: boolean; subscribersCount: number }>(
+      `/creators/${creatorId}/subscribe-status`,
     ),
+  getCreatorSubscribers: (creatorId: number) =>
+    request<
+      {
+        id: number;
+        username: string;
+        displayName: string;
+        avatarUrl: string | null;
+        subscribedAt: string;
+      }[]
+    >(`/creators/${creatorId}/subscribers`),
 
   // Billing / Stripe
-  createCheckout: (plan: string, creatorId?: number) =>
+  createCheckout: (plan: string, creatorId?: number, companyId?: number) =>
     request<{ url: string | null; sessionId: string; demo?: boolean }>("/billing/checkout", {
       method: "POST",
-      body: JSON.stringify({ plan, creatorId }),
+      body: JSON.stringify({ plan, creatorId, companyId }),
     }),
   getBillingStatus: () =>
-    request<{ isPremiumCreator: boolean; expiresAt: string | null; stripeManaged: boolean }>("/billing/status"),
+    request<{ isPremiumCreator: boolean; expiresAt: string | null; stripeManaged: boolean }>(
+      "/billing/status",
+    ),
 };

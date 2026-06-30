@@ -77,6 +77,12 @@ export const companies = mysqlTable("companies", {
   website: varchar("website", { length: 300 }).default(""),
   industry: varchar("industry", { length: 100 }).default(""),
   location: varchar("location", { length: 200 }).default(""),
+  // Subscrição empresa: trial 3 meses, depois paga (month/annual)
+  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("trial").notNull(), // trial, active, expired
+  subscriptionPlan: varchar("subscription_plan", { length: 20 }).default(""), // month, annual
+  trialEndsAt: timestamp("trial_ends_at").defaultNow().notNull(),
+  subscriptionEndsAt: timestamp("subscription_ends_at"),
+  stripeSubscriptionId: varchar("stripe_subscription_id", { length: 100 }).default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -221,7 +227,7 @@ export const creatorSubscribers = mysqlTable(
   {
     id: serial("id").primaryKey(),
     subscriberId: int("subscriber_id").notNull(), // quem subscreve
-    creatorId: int("creator_id").notNull(),       // criador premium
+    creatorId: int("creator_id").notNull(), // criador premium
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({
@@ -235,9 +241,10 @@ export const payments = mysqlTable("payments", {
   userId: int("user_id").notNull(),
   stripeCustomerId: varchar("stripe_customer_id", { length: 64 }),
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 64 }),
-  plan: varchar("plan", { length: 20 }).notNull(), // "premium_creator" | "creator_subscriber"
+  plan: varchar("plan", { length: 20 }).notNull(), // premium_creator | creator_subscriber | company_month | company_annual
   targetCreatorId: int("target_creator_id"), // preenchido para plan=creator_subscriber
-  amount: int("amount").notNull(), // em cêntimos (299 ou 699)
+  targetCompanyId: int("target_company_id"), // preenchido para plan=company_*
+  amount: int("amount").notNull(), // em cêntimos
   status: varchar("status", { length: 20 }).default("pending").notNull(), // pending | active | cancelled | expired
   currentPeriodEnd: timestamp("current_period_end"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

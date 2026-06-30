@@ -67,6 +67,11 @@ export async function ensureTables(): Promise<void> {
         website VARCHAR(300) DEFAULT '',
         industry VARCHAR(100) DEFAULT '',
         location VARCHAR(200) DEFAULT '',
+        subscription_status VARCHAR(20) NOT NULL DEFAULT 'trial',
+        subscription_plan VARCHAR(20) DEFAULT '',
+        trial_ends_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        subscription_ends_at TIMESTAMP NULL,
+        stripe_subscription_id VARCHAR(100) DEFAULT '',
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -214,6 +219,7 @@ export async function ensureTables(): Promise<void> {
         stripe_subscription_id VARCHAR(64),
         plan VARCHAR(20) NOT NULL,
         target_creator_id INT,
+        target_company_id INT,
         amount INT NOT NULL,
         status VARCHAR(20) NOT NULL DEFAULT 'pending',
         current_period_end TIMESTAMP,

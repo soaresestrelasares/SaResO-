@@ -1,7 +1,14 @@
 import { Router } from "express";
 import Stripe from "stripe";
 import { getDb } from "../db.js";
-import { users, payments, subscriptions, creatorSubscribers, notifications } from "../schema.js";
+import {
+  users,
+  payments,
+  subscriptions,
+  creatorSubscribers,
+  notifications,
+  companies,
+} from "../schema.js";
 import { eq, sql } from "drizzle-orm";
 import { authMiddleware, AuthRequest } from "../middleware/auth.js";
 
@@ -13,8 +20,10 @@ const APP_URL = process.env.APP_URL || "https://sareso.onrender.com";
 
 // Preços em cêntimos
 const PLANS = {
-  premium_creator: { amount: 699, label: "SaResO Premium Criador" },
-  creator_subscriber: { amount: 299, label: "Subscrição de Criador" },
+  premium_creator: { amount: 699, label: "SaResO Premium Criador", interval: "month" },
+  creator_subscriber: { amount: 299, label: "Subscrição de Criador", interval: "month" },
+  company_month: { amount: 1099, label: "SaResO Empresa Mensal", interval: "month" },
+  company_annual: { amount: 8900, label: "SaResO Empresa Anual", interval: "year" },
 };
 
 function getStripe(): Stripe {
@@ -24,14 +33,23 @@ function getStripe(): Stripe {
 
 // POST /api/billing/checkout — criar sessão de pagamento Stripe
 billingRouter.post("/checkout", authMiddleware, async (req: AuthRequest, res) => {
-  const { plan, creatorId } = req.body as { plan: string; creatorId?: number };
+  const { plan, creatorId, companyId } = req.body as {
+    plan: string;
+    creatorId?: number;
+    companyId?: number;
+  };
 
-  if (plan !== "premium_creator" && plan !== "creator_subscriber") {
+  const validPlans = ["premium_creator", "creator_subscriber", "company_month", "company_annual"];
+  if (!validPlans.includes(plan)) {
     res.status(400).json({ error: "Plano inválido." });
     return;
   }
   if (plan === "creator_subscriber" && !creatorId) {
     res.status(400).json({ error: "creatorId obrigatório para subscrição de criador." });
+    return;
+  }
+  if ((plan === "company_month" || plan === "company_annual") && !companyId) {
+    res.status(400).json({ error: "companyId obrigatório para subscrição de empresa." });
     return;
   }
 
@@ -47,7 +65,19 @@ billingRouter.post("/checkout", authMiddleware, async (req: AuthRequest, res) =>
   const db = getDb();
   const stripe = getStripe();
   const [user] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
-  if (!user) { res.status(404).json({ error: "Utilizador não encontrado." }); return; }
+  if (!user) {
+    res.status(404).json({ error: "Utilizador não encontrado." });
+    return;
+  }
+
+  // Se for empresa, verificar se o utilizador é o dono
+  if (companyId) {
+    const [company] = await db.select().from(companies).where(eq(companies.id, companyId)).limit(1);
+    if (!company || Number(company.ownerId) !== req.userId!) {
+      res.status(403).json({ error: "Sem permissão para gerir esta empresa." });
+      return;
+    }
+  }
 
   const planInfo = PLANS[plan as keyof typeof PLANS];
 
@@ -55,7 +85,7 @@ billingRouter.post("/checkout", authMiddleware, async (req: AuthRequest, res) =>
   const price = await stripe.prices.create({
     currency: "eur",
     unit_amount: planInfo.amount,
-    recurring: { interval: "month" },
+    recurring: { interval: planInfo.interval as Stripe.PriceCreateParams.Recurring.Interval },
     product_data: { name: planInfo.label },
   });
 
@@ -64,6 +94,7 @@ billingRouter.post("/checkout", authMiddleware, async (req: AuthRequest, res) =>
     plan,
   };
   if (creatorId) metadata["creatorId"] = String(creatorId);
+  if (companyId) metadata["companyId"] = String(companyId);
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -80,6 +111,7 @@ billingRouter.post("/checkout", authMiddleware, async (req: AuthRequest, res) =>
     userId: req.userId!,
     plan,
     targetCreatorId: creatorId ?? null,
+    targetCompanyId: companyId ?? null,
     amount: planInfo.amount,
     status: "pending",
   });
@@ -115,24 +147,26 @@ billingRouter.post(
       const userId = parseInt(meta["userId"] ?? "0");
       const plan = meta["plan"] ?? "";
       const creatorId = meta["creatorId"] ? parseInt(meta["creatorId"]) : null;
+      const companyId = meta["companyId"] ? parseInt(meta["companyId"]) : null;
       const subId = typeof session.subscription === "string" ? session.subscription : null;
       const periodEnd = subId
         ? (() => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return stripe.subscriptions.retrieve(subId).then((s: any) => new Date(s.current_period_end * 1000));
+            return stripe.subscriptions
+              .retrieve(subId)
+              .then((s: any) => new Date(s.current_period_end * 1000));
           })()
         : Promise.resolve(null);
       const resolvedPeriodEnd = await periodEnd;
+      const now = new Date();
 
       if (plan === "premium_creator") {
-        // Ativar badge premium
         const expiresAt = resolvedPeriodEnd ?? new Date(now.getTime() + 30 * 86400000);
         await db
           .insert(subscriptions)
           .values({ userId, expiresAt, active: 1 })
           .onDuplicateKeyUpdate({ set: { expiresAt, active: 1 } });
       } else if (plan === "creator_subscriber" && creatorId) {
-        // Ativar subscrição de criador
         const [existing] = await db
           .select()
           .from(creatorSubscribers)
@@ -147,6 +181,19 @@ billingRouter.post(
             entityId: userId,
           });
         }
+      } else if ((plan === "company_month" || plan === "company_annual") && companyId) {
+        const planDuration = plan === "company_annual" ? 365 : 30;
+        const subscriptionEndsAt =
+          resolvedPeriodEnd ?? new Date(now.getTime() + planDuration * 86400000);
+        await db
+          .update(companies)
+          .set({
+            subscriptionStatus: "active",
+            subscriptionPlan: plan === "company_annual" ? "annual" : "month",
+            subscriptionEndsAt,
+            stripeSubscriptionId: subId ?? "",
+          })
+          .where(eq(companies.id, companyId));
       }
 
       // Atualizar registo de pagamento
@@ -167,6 +214,7 @@ billingRouter.post(
       const userId = parseInt(meta["userId"] ?? "0");
       const plan = meta["plan"] ?? "";
       const creatorId = meta["creatorId"] ? parseInt(meta["creatorId"]) : null;
+      const companyId = meta["companyId"] ? parseInt(meta["companyId"]) : null;
 
       if (plan === "premium_creator") {
         await db.update(subscriptions).set({ active: 0 }).where(eq(subscriptions.userId, userId));
@@ -174,6 +222,11 @@ billingRouter.post(
         await db
           .delete(creatorSubscribers)
           .where(sql`subscriber_id = ${userId} AND creator_id = ${creatorId}`);
+      } else if ((plan === "company_month" || plan === "company_annual") && companyId) {
+        await db
+          .update(companies)
+          .set({ subscriptionStatus: "expired" })
+          .where(eq(companies.id, companyId));
       }
       await db
         .update(payments)
