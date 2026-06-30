@@ -17,6 +17,7 @@ import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as JobsRouteImport } from './routes/jobs'
+import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
@@ -66,6 +67,11 @@ const JobsRoute = JobsRouteImport.update({
   path: '/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BillingRoute = BillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -110,6 +116,7 @@ const CompanyIdRoute = CompanyIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/billing': typeof BillingRoute
   '/jobs': typeof JobsRouteWithChildren
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRouteWithChildren
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/billing': typeof BillingRoute
   '/jobs': typeof JobsRouteWithChildren
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRouteWithChildren
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/billing': typeof BillingRoute
   '/jobs': typeof JobsRouteWithChildren
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRouteWithChildren
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/billing'
     | '/jobs'
     | '/login'
     | '/messages'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/billing'
     | '/jobs'
     | '/login'
     | '/messages'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/billing'
     | '/jobs'
     | '/login'
     | '/messages'
@@ -222,6 +234,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  BillingRoute: typeof BillingRoute
   JobsRoute: typeof JobsRouteWithChildren
   LoginRoute: typeof LoginRoute
   MessagesRoute: typeof MessagesRouteWithChildren
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       path: '/jobs'
       fullPath: '/jobs'
       preLoaderRoute: typeof JobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/billing': {
+      id: '/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof BillingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -379,6 +399,7 @@ const MessagesRouteWithChildren = MessagesRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  BillingRoute: BillingRoute,
   JobsRoute: JobsRouteWithChildren,
   LoginRoute: LoginRoute,
   MessagesRoute: MessagesRouteWithChildren,

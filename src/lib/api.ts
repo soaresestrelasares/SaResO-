@@ -170,4 +170,13 @@ export const api = {
     request<{ id: number; username: string; displayName: string; avatarUrl: string | null; subscribedAt: string }[]>(
       `/creators/${creatorId}/subscribers`,
     ),
+
+  // Billing / Stripe
+  createCheckout: (plan: string, creatorId?: number) =>
+    request<{ url: string | null; sessionId: string; demo?: boolean }>("/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ plan, creatorId }),
+    }),
+  getBillingStatus: () =>
+    request<{ isPremiumCreator: boolean; expiresAt: string | null; stripeManaged: boolean }>("/billing/status"),
 };

@@ -56,8 +56,11 @@ function ProfilePage() {
   });
 
   const subscribeMutation = useMutation({
-    mutationFn: () => api.subscribeToCreator(profile!.id),
-    onSuccess: () => refetchSubscribe(),
+    mutationFn: () => api.createCheckout("creator_subscriber", profile!.id),
+    onSuccess: (data) => {
+      if (data.url) window.location.href = data.url;
+      else if (data.demo) alert("Subscrição gratuita (Stripe não configurado): a subscrever diretamente.");
+    },
   });
 
   const messageMutation = useMutation({
@@ -191,7 +194,7 @@ function ProfilePage() {
                     : "bg-orange-500 text-white hover:bg-orange-600"
                 }`}
               >
-                {subscribeStatus?.subscribed ? "✓ Subscrito" : "⭐ Subscrever"}
+                {subscribeStatus?.subscribed ? "✓ Subscrito" : "⭐ Subscrever · 2,99€/mês"}
               </button>
             )}
           </div>

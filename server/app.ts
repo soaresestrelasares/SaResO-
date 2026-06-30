@@ -18,6 +18,7 @@ import { notificationsRouter } from "./routes/notifications.js";
 import { livesRouter } from "./routes/lives.js";
 import { adminRouter } from "./routes/admin.js";
 import { subscribersRouter } from "./routes/subscribers.js";
+import { billingRouter } from "./routes/billing.js";
 import { ensureTables } from "./migrate.js";
 
 const authLimiter = rateLimit({
@@ -53,12 +54,20 @@ export function createApp() {
 
   app.use(express.json({ limit: "2mb" }));
 
+  // Webhook Stripe precisa de raw body — registar antes do express.json
+  app.post(
+    "/api/billing/webhook",
+    express.raw({ type: "application/json" }),
+    (req, res, next) => { next(); },
+  );
+
   // Rate limiting
   app.use("/api/auth", authLimiter);
   app.use("/api", apiLimiter);
 
   app.use("/api/health", healthRouter);
   app.use("/api/auth", authRouter);
+  app.use("/api/billing", billingRouter);
   app.use("/api/videos", videosRouter);
   app.use("/api/comments", commentsRouter);
   app.use("/api/follows", followsRouter);

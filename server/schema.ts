@@ -228,3 +228,17 @@ export const creatorSubscribers = mysqlTable(
     uniqueSub: uniqueIndex("unique_creator_sub").on(table.subscriberId, table.creatorId),
   }),
 );
+
+// Pagamentos / histórico de transações Stripe
+export const payments = mysqlTable("payments", {
+  id: serial("id").primaryKey(),
+  userId: int("user_id").notNull(),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 64 }),
+  stripeSubscriptionId: varchar("stripe_subscription_id", { length: 64 }),
+  plan: varchar("plan", { length: 20 }).notNull(), // "premium_creator" | "creator_subscriber"
+  targetCreatorId: int("target_creator_id"), // preenchido para plan=creator_subscriber
+  amount: int("amount").notNull(), // em cêntimos (299 ou 699)
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending | active | cancelled | expired
+  currentPeriodEnd: timestamp("current_period_end"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

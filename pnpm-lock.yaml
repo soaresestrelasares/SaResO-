@@ -176,6 +176,9 @@ importers:
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      stripe:
+        specifier: ^22.3.0
+        version: 22.3.0(@types/node@22.19.20)
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
@@ -225,6 +228,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.0
         version: 19.2.3(@types/react@19.2.17)
+      '@types/stripe':
+        specifier: ^8.0.417
+        version: 8.0.417(@types/node@22.19.20)
       '@vitejs/plugin-react':
         specifier: ^5.0.4
         version: 5.2.0(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
@@ -2080,6 +2086,10 @@ packages:
   '@types/serve-static@2.2.0':
     resolution: {integrity: sha512-8mam4H1NHLtu7nmtalF7eyBH14QyOASmcxHhSfEoRyr0nP/YdoesEtU+uSRvMe96TW/HPTtkoKqQLl53N7UXMQ==}
 
+  '@types/stripe@8.0.417':
+    resolution: {integrity: sha512-PTuqskh9YKNENnOHGVJBm4sM0zE8B1jZw1JIskuGAPkMB+OH236QeN8scclhYGPA4nG6zTtPXgwpXdp+HPDTVw==}
+    deprecated: This is a stub types definition. stripe provides its own type definitions, so you do not need this installed.
+
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
@@ -3501,6 +3511,15 @@ packages:
   strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
+
+  stripe@22.3.0:
+    resolution: {integrity: sha512-ypO6xjVrMWs9SmIMeHr8naCx3dAQ0clxMdUTxn7Ejd7hmY9meBGfE+N4pVHkf9sUNebAHp6uJo6mV3GxDIc2cA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
 
   supports-color@7.2.0:
     resolution: {integrity: sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==}
@@ -5296,6 +5315,12 @@ snapshots:
       '@types/http-errors': 2.0.5
       '@types/node': 22.19.20
 
+  '@types/stripe@8.0.417(@types/node@22.19.20)':
+    dependencies:
+      stripe: 22.3.0(@types/node@22.19.20)
+    transitivePeerDependencies:
+      - '@types/node'
+
   '@types/ws@8.18.1':
     dependencies:
       '@types/node': 22.19.20
@@ -6764,6 +6789,10 @@ snapshots:
       ansi-regex: 5.0.1
 
   strip-json-comments@3.1.1: {}
+
+  stripe@22.3.0(@types/node@22.19.20):
+    optionalDependencies:
+      '@types/node': 22.19.20
 
   supports-color@7.2.0:
     dependencies:

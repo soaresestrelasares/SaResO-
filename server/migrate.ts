@@ -206,6 +206,20 @@ export async function ensureTables(): Promise<void> {
         UNIQUE KEY unique_creator_sub (subscriber_id, creator_id)
       )
     `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS payments (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        stripe_customer_id VARCHAR(64),
+        stripe_subscription_id VARCHAR(64),
+        plan VARCHAR(20) NOT NULL,
+        target_creator_id INT,
+        amount INT NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending',
+        current_period_end TIMESTAMP,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
     console.log("[sareso] All tables ready.");
   } finally {
     conn.release();
