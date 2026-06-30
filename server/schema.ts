@@ -176,10 +176,20 @@ export const lives = mysqlTable("lives", {
   id: serial("id").primaryKey(),
   userId: int("user_id").notNull(),
   title: varchar("title", { length: 200 }).notNull(),
-  status: varchar("status", { length: 10 }).default("live").notNull(), // live, ended
+  status: varchar("status", { length: 10 }).default("live").notNull(), // live, ended, deleted
   viewerCount: int("viewer_count").default(0).notNull(),
   startedAt: timestamp("started_at").defaultNow().notNull(),
   endedAt: timestamp("ended_at"),
+});
+
+// Moderadores/banidos de uma live
+export const liveBans = mysqlTable("live_bans", {
+  id: serial("id").primaryKey(),
+  liveId: int("live_id").notNull(),
+  userId: int("user_id").notNull(),
+  bannedBy: int("banned_by").notNull(),
+  reason: varchar("reason", { length: 500 }).default(""),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const passwordResetTokens = mysqlTable("password_reset_tokens", {

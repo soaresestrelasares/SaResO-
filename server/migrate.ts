@@ -165,6 +165,17 @@ export async function ensureTables(): Promise<void> {
       )
     `);
     await conn.execute(`
+      CREATE TABLE IF NOT EXISTS live_bans (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        live_id INT NOT NULL,
+        user_id INT NOT NULL,
+        banned_by INT NOT NULL,
+        reason VARCHAR(500) DEFAULT '',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_live_ban (live_id, user_id)
+      )
+    `);
+    await conn.execute(`
       CREATE TABLE IF NOT EXISTS password_reset_tokens (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
