@@ -1,11 +1,10 @@
 services:
   - type: web
     name: sareso
-    runtime: node
+    runtime: docker
+    dockerfilePath: ./Dockerfile
     region: frankfurt
     plan: free
-    buildCommand: npm install -g pnpm@10.12.2 && pnpm install --frozen-lockfile && pnpm build
-    startCommand: node dist/server/index.js
     envVars:
       - key: NODE_ENV
         value: production
