@@ -2,24 +2,14 @@ import http from "http";
 import { createApp } from "./app.js";
 import { serverConfig } from "./config.js";
 import { initSocket } from "./socket.js";
-import { migrate } from "drizzle-orm/mysql2/migrator";
-import { getDb, getPool } from "./db.js";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { ensureTables } from "./migrate.js";
 
-const serverDir = path.dirname(fileURLToPath(import.meta.url));
-
-async function runMigrations() {
-  try {
-    const db = getDb();
-    await migrate(db, { migrationsFolder: path.join(serverDir, "../../drizzle") });
-    console.log("[sareso] Database migrations applied.");
-  } catch (err) {
-    console.warn("[sareso] Migration warning (may already be applied):", err instanceof Error ? err.message : err);
-  }
+try {
+  await ensureTables();
+} catch (err) {
+  console.error("[sareso] Failed to create tables:", err instanceof Error ? err.message : err);
+  process.exit(1);
 }
-
-await runMigrations();
 
 const app = createApp();
 const server = http.createServer(app);
