@@ -66,5 +66,28 @@ commentsRouter.post("/:videoId", authMiddleware, moderateContent, async (req: Au
   } catch {
     // no-op
   }
+  // Trigger mention notifications for @username patterns
+  try {
+    const mentionRegex = /@([\w.]+)/g;
+    let match: RegExpExecArray | null;
+    while ((match = mentionRegex.exec(content)) !== null) {
+      const mentionedUsername = match[1];
+      const [mentionedUser] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.username, mentionedUsername))
+        .limit(1);
+      if (mentionedUser && Number(mentionedUser.id) !== req.userId!) {
+        await db.insert(notifications).values({
+          userId: Number(mentionedUser.id),
+          actorId: req.userId!,
+          type: "mention",
+          entityId: videoId,
+        });
+      }
+    }
+  } catch {
+    // no-op
+  }
   res.json({ id: Number(result.insertId), userId: req.userId!, videoId, content });
 });

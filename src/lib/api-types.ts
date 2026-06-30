@@ -25,6 +25,8 @@ export interface Video {
   displayName: string;
   avatarUrl: string | null;
   liked: boolean;
+  saved?: boolean;
+  savedCount?: number;
 }
 
 export interface Comment {
@@ -116,7 +118,7 @@ export interface Notification {
   id: number;
   userId: number;
   actorId: number;
-  type: "follow" | "like" | "comment" | "message" | "job_application";
+  type: "follow" | "like" | "comment" | "message" | "job_application" | "mention";
   entityId: number | null;
   readAt: string | null;
   createdAt: string;

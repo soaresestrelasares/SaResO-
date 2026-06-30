@@ -184,3 +184,16 @@ export const passwordResetTokens = mysqlTable("password_reset_tokens", {
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const savedVideos = mysqlTable(
+  "saved_videos",
+  {
+    id: serial("id").primaryKey(),
+    userId: int("user_id").notNull(),
+    videoId: int("video_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueSave: uniqueIndex("unique_save").on(table.userId, table.videoId),
+  }),
+);

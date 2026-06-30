@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getDb } from "../db.js";
-import { videos, users, likes, notifications } from "../schema.js";
+import { videos, users, likes, notifications, savedVideos } from "../schema.js";
 import { eq, desc, sql } from "drizzle-orm";
 import { authMiddleware, optionalAuth, AuthRequest } from "../middleware/auth.js";
 import { moderateContent } from "../middleware/moderation.js";
@@ -43,11 +43,21 @@ videosRouter.get("/", optionalAuth, async (req: AuthRequest, res) => {
     liked = new Set(userLikes.map((l) => Number(l.videoId)));
   }
 
+  let saved: Set<number> = new Set();
+  if (req.userId) {
+    const userSaved = await db
+      .select({ videoId: savedVideos.videoId })
+      .from(savedVideos)
+      .where(eq(savedVideos.userId, req.userId));
+    saved = new Set(userSaved.map((s) => Number(s.videoId)));
+  }
+
   const result = rows.map((r) => ({
     ...r,
     id: Number(r.id),
     userId: Number(r.userId),
     liked: liked.has(Number(r.id)),
+    saved: saved.has(Number(r.id)),
   }));
   res.json(result);
 });
@@ -68,6 +78,49 @@ videosRouter.post("/", authMiddleware, moderateContent, async (req: AuthRequest,
     thumbnailUrl: thumbnailUrl || "",
   });
   res.json({ id: Number(result.insertId), title, videoUrl });
+});
+
+// Get saved videos for current user — must be before /:id
+videosRouter.get("/saved", authMiddleware, async (req: AuthRequest, res) => {
+  const db = getDb();
+  const userId = req.userId!;
+  const rows = await db
+    .select({
+      id: videos.id,
+      userId: videos.userId,
+      title: videos.title,
+      description: videos.description,
+      videoUrl: videos.videoUrl,
+      thumbnailUrl: videos.thumbnailUrl,
+      likesCount: videos.likesCount,
+      commentsCount: videos.commentsCount,
+      viewsCount: videos.viewsCount,
+      createdAt: videos.createdAt,
+      username: users.username,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(savedVideos)
+    .innerJoin(videos, eq(savedVideos.videoId, videos.id))
+    .innerJoin(users, eq(videos.userId, users.id))
+    .where(eq(savedVideos.userId, userId))
+    .orderBy(desc(savedVideos.createdAt));
+
+  const userLikes = await db
+    .select({ videoId: likes.videoId })
+    .from(likes)
+    .where(eq(likes.userId, userId));
+  const likedSet = new Set(userLikes.map((l) => Number(l.videoId)));
+
+  res.json(
+    rows.map((r) => ({
+      ...r,
+      id: Number(r.id),
+      userId: Number(r.userId),
+      liked: likedSet.has(Number(r.id)),
+      saved: true,
+    })),
+  );
 });
 
 // Get single video
@@ -103,12 +156,21 @@ videosRouter.get("/:id", optionalAuth, async (req: AuthRequest, res) => {
     const [l] = await db.select().from(likes).where(eq(likes.userId, req.userId)).limit(1);
     liked = !!l;
   }
+  let savedFlag = false;
+  if (req.userId) {
+    const savedRows = await db
+      .select()
+      .from(savedVideos)
+      .where(sql`user_id = ${req.userId} AND video_id = ${id}`)
+      .limit(1);
+    savedFlag = savedRows.length > 0;
+  }
   // increment views
   await db
     .update(videos)
     .set({ viewsCount: sql`${videos.viewsCount} + 1` })
     .where(eq(videos.id, id));
-  res.json({ ...row, id: Number(row.id), userId: Number(row.userId), liked });
+  res.json({ ...row, id: Number(row.id), userId: Number(row.userId), liked, saved: savedFlag });
 });
 
 // Get videos by user
@@ -167,5 +229,24 @@ videosRouter.post("/:id/like", authMiddleware, async (req: AuthRequest, res) => 
       // no-op
     }
     res.json({ liked: true });
+  }
+});
+
+// Save / unsave
+videosRouter.post("/:id/save", authMiddleware, async (req: AuthRequest, res) => {
+  const db = getDb();
+  const videoId = parseInt(req.params.id as string);
+  const userId = req.userId!;
+  const rows = await db
+    .select()
+    .from(savedVideos)
+    .where(sql`user_id = ${userId} AND video_id = ${videoId}`)
+    .limit(1);
+  if (rows.length > 0) {
+    await db.delete(savedVideos).where(sql`user_id = ${userId} AND video_id = ${videoId}`);
+    res.json({ saved: false });
+  } else {
+    await db.insert(savedVideos).values({ userId, videoId });
+    res.json({ saved: true });
   }
 });

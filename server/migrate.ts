@@ -169,6 +169,15 @@ export async function ensureTables(): Promise<void> {
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS saved_videos (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        video_id INT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_save (user_id, video_id)
+      )
+    `);
     console.log("[sareso] All tables ready.");
   } finally {
     conn.release();

@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { X, Send } from "lucide-react";
+import { parseText } from "@/lib/parse-text";
 
 interface Props {
   videoId: number;
@@ -68,7 +69,7 @@ export function CommentDrawer({ videoId, onClose }: Props) {
                   <span className="text-white font-semibold text-sm">@{c.username}</span>
                   <span className="text-gray-500 text-xs">{formatTime(c.createdAt)}</span>
                 </div>
-                <p className="text-gray-200 text-sm mt-0.5">{c.content}</p>
+                <p className="text-gray-200 text-sm mt-0.5">{parseText(c.content)}</p>
               </div>
             </div>
           ))}

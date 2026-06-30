@@ -61,6 +61,8 @@ export const api = {
     thumbnailUrl: string;
   }) => request<{ id: number }>("/videos", { method: "POST", body: JSON.stringify(data) }),
   likeVideo: (id: number) => request<{ liked: boolean }>(`/videos/${id}/like`, { method: "POST" }),
+  saveVideo: (id: number) => request<{ saved: boolean }>(`/videos/${id}/save`, { method: "POST" }),
+  getSavedVideos: () => request<Video[]>('/videos/saved'),
 
   // Comments
   getComments: (videoId: number) => request<Comment[]>(`/comments/${videoId}`),

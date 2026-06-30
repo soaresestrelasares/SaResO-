@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { BottomNav } from "@/components/BottomNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Grid3X3, Heart, Settings } from "lucide-react";
+import { ArrowLeft, Grid3X3, Heart, Settings, Bookmark } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -18,6 +18,7 @@ function ProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isMe = user?.username === username;
+  const [activeTab, setActiveTab] = useState<"videos" | "saved">("videos");
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["user", username],
@@ -28,6 +29,12 @@ function ProfilePage() {
     queryKey: ["userVideos", profile?.id],
     queryFn: () => api.getUserVideos(profile!.id),
     enabled: !!profile?.id,
+  });
+
+  const { data: savedVideos = [] } = useQuery({
+    queryKey: ["savedVideos"],
+    queryFn: () => api.getSavedVideos(),
+    enabled: isMe,
   });
 
   const { data: followStatus, refetch: refetchFollow } = useQuery({
@@ -156,34 +163,72 @@ function ProfilePage() {
       {/* Videos grid */}
       <div className="border-t border-gray-800">
         <div className="flex border-b border-gray-800">
-          <button className="flex-1 flex items-center justify-center py-3 border-b-2 border-white">
+          <button
+            onClick={() => setActiveTab("videos")}
+            className={`flex-1 flex items-center justify-center py-3 ${activeTab === "videos" ? "border-b-2 border-white" : "text-gray-500"}`}
+          >
             <Grid3X3 className="w-5 h-5" />
           </button>
-          <button className="flex-1 flex items-center justify-center py-3 text-gray-500">
-            <Heart className="w-5 h-5" />
+          <button
+            onClick={() => setActiveTab("saved")}
+            className={`flex-1 flex items-center justify-center py-3 ${activeTab === "saved" ? "border-b-2 border-white" : "text-gray-500"}`}
+          >
+            <Bookmark className="w-5 h-5" />
           </button>
         </div>
-        {userVideos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-500">
-            <Grid3X3 className="w-12 h-12 mb-3 opacity-30" />
-            <p className="text-sm">No videos yet</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-px">
-            {userVideos.map((v) => (
-              <div key={v.id} className="aspect-[9/16] bg-gray-900 relative overflow-hidden">
-                {v.thumbnailUrl ? (
-                  <img src={v.thumbnailUrl} alt={v.title} className="w-full h-full object-cover" />
-                ) : (
-                  <video src={v.videoUrl} className="w-full h-full object-cover" muted />
-                )}
-                <div className="absolute bottom-1 left-1 flex items-center gap-0.5 text-white text-xs">
-                  <Heart className="w-3 h-3" fill="white" />
-                  <span>{formatCount(v.likesCount)}</span>
-                </div>
+
+        {activeTab === "videos" && (
+          <>
+            {userVideos.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+                <Grid3X3 className="w-12 h-12 mb-3 opacity-30" />
+                <p className="text-sm">Sem vídeos ainda</p>
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-px">
+                {userVideos.map((v) => (
+                  <div key={v.id} className="aspect-[9/16] bg-gray-900 relative overflow-hidden">
+                    {v.thumbnailUrl ? (
+                      <img src={v.thumbnailUrl} alt={v.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <video src={v.videoUrl} className="w-full h-full object-cover" muted />
+                    )}
+                    <div className="absolute bottom-1 left-1 flex items-center gap-0.5 text-white text-xs">
+                      <Heart className="w-3 h-3" fill="white" />
+                      <span>{formatCount(v.likesCount)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === "saved" && isMe && (
+          <>
+            {savedVideos.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+                <Bookmark className="w-12 h-12 mb-3 opacity-30" />
+                <p className="text-sm">Sem vídeos guardados</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-px">
+                {savedVideos.map((v) => (
+                  <div key={v.id} className="aspect-[9/16] bg-gray-900 relative overflow-hidden">
+                    {v.thumbnailUrl ? (
+                      <img src={v.thumbnailUrl} alt={v.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <video src={v.videoUrl} className="w-full h-full object-cover" muted />
+                    )}
+                    <div className="absolute bottom-1 left-1 flex items-center gap-0.5 text-white text-xs">
+                      <Heart className="w-3 h-3" fill="white" />
+                      <span>{formatCount(v.likesCount)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 

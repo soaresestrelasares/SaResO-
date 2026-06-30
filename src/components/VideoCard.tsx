@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Link } from "@tanstack/react-router";
 import { CommentDrawer } from "./CommentDrawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { parseText } from "@/lib/parse-text";
 
 interface VideoCardProps {
   video: Video;
@@ -16,6 +17,7 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [liked, setLiked] = useState(video.liked);
   const [likesCount, setLikesCount] = useState(video.likesCount);
+  const [saved, setSaved] = useState(video.saved ?? false);
   const [showComments, setShowComments] = useState(false);
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
@@ -48,6 +50,20 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
     } catch {
       setLiked((l) => !l);
       setLikesCount((c) => (liked ? c + 1 : c - 1));
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+    const prev = saved;
+    setSaved(!prev);
+    try {
+      await api.saveVideo(video.id);
+    } catch {
+      setSaved(prev);
     }
   };
 
@@ -154,11 +170,15 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
         </button>
 
         {/* Bookmark */}
-        <button className="flex flex-col items-center gap-1">
-          <div className="p-2 rounded-full text-white">
-            <BookmarkIcon className="w-7 h-7" strokeWidth={1.5} />
+        <button onClick={handleSave} className="flex flex-col items-center gap-1">
+          <div className={`p-2 rounded-full ${saved ? "text-yellow-400" : "text-white"}`}>
+            <BookmarkIcon
+              className="w-7 h-7"
+              fill={saved ? "currentColor" : "none"}
+              strokeWidth={1.5}
+            />
           </div>
-          <span className="text-white text-xs font-semibold">Guardar</span>
+          <span className="text-white text-xs font-semibold">{saved ? "Guardado" : "Guardar"}</span>
         </button>
 
         {/* Share */}
@@ -187,9 +207,13 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
         >
           <p className="text-white font-bold text-base mb-1">@{video.username}</p>
         </Link>
-        <p className="text-white text-sm mb-2 line-clamp-2">{video.title}</p>
+        <p className="text-white text-sm mb-2 line-clamp-2 pointer-events-auto">
+          {parseText(video.title)}
+        </p>
         {video.description && (
-          <p className="text-gray-200 text-xs line-clamp-1">{video.description}</p>
+          <p className="text-gray-200 text-xs line-clamp-1 pointer-events-auto">
+            {parseText(video.description)}
+          </p>
         )}
         <div className="flex items-center gap-1 mt-1">
           <Music className="w-3 h-3 text-white" />
