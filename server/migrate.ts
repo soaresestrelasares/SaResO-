@@ -197,6 +197,15 @@ export async function ensureTables(): Promise<void> {
         verified_by INT NOT NULL
       )
     `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS creator_subscribers (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        subscriber_id INT NOT NULL,
+        creator_id INT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_creator_sub (subscriber_id, creator_id)
+      )
+    `);
     console.log("[sareso] All tables ready.");
   } finally {
     conn.release();

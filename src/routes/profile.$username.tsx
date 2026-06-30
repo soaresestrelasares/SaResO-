@@ -44,9 +44,20 @@ function ProfilePage() {
     enabled: !!profile?.id && !!user && !isMe,
   });
 
+  const { data: subscribeStatus, refetch: refetchSubscribe } = useQuery({
+    queryKey: ["subscribeStatus", profile?.id],
+    queryFn: () => api.getSubscribeStatus(profile!.id),
+    enabled: !!profile?.id && !!user && !isMe && !!profile?.isPremium,
+  });
+
   const followMutation = useMutation({
     mutationFn: () => api.toggleFollow(profile!.id),
     onSuccess: () => refetchFollow(),
+  });
+
+  const subscribeMutation = useMutation({
+    mutationFn: () => api.subscribeToCreator(profile!.id),
+    onSuccess: () => refetchSubscribe(),
   });
 
   const messageMutation = useMutation({
@@ -110,56 +121,79 @@ function ProfilePage() {
         <p className="text-gray-400 text-sm mb-3">@{profile.username}</p>
 
         {/* Stats */}
-        <div className="flex gap-8 mb-4">
+        <div className="flex gap-6 mb-4 flex-wrap justify-center">
           <div className="text-center">
-            <p className="text-white font-bold text-lg">
-              {formatCount(profile.followingCount ?? 0)}
-            </p>
-            <p className="text-gray-400 text-xs">Following</p>
+            <p className="text-white font-bold text-lg">{formatCount(profile.followingCount ?? 0)}</p>
+            <p className="text-gray-400 text-xs">A seguir</p>
           </div>
           <div className="text-center">
-            <p className="text-white font-bold text-lg">
-              {formatCount(profile.followersCount ?? 0)}
-            </p>
-            <p className="text-gray-400 text-xs">Followers</p>
+            <p className="text-white font-bold text-lg">{formatCount(profile.followersCount ?? 0)}</p>
+            <p className="text-gray-400 text-xs">Seguidores</p>
           </div>
           <div className="text-center">
             <p className="text-white font-bold text-lg">{formatCount(profile.videosCount ?? 0)}</p>
-            <p className="text-gray-400 text-xs">Videos</p>
+            <p className="text-gray-400 text-xs">Vídeos</p>
           </div>
+          {profile.isPremium && (
+            <div className="text-center">
+              <p className="text-orange-400 font-bold text-lg">
+                {formatCount(subscribeStatus?.subscribersCount ?? profile.subscribersCount ?? 0)}
+              </p>
+              <p className="text-orange-400 text-xs font-semibold">Subscritores</p>
+            </div>
+          )}
         </div>
 
         {profile.bio && <p className="text-gray-300 text-sm text-center mb-4">{profile.bio}</p>}
 
         {/* Action buttons */}
         {isMe ? (
-          <Link
-            to="/upload"
-            className="w-full max-w-xs border border-gray-600 text-white font-semibold py-2.5 rounded-xl text-center text-sm"
-          >
-            Publicar vídeo
-          </Link>
-        ) : (
           <div className="flex gap-3 w-full max-w-xs">
-            <button
-              onClick={() => (user ? followMutation.mutate() : navigate({ to: "/login" }))}
-              disabled={followMutation.isPending}
-              className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-colors ${followStatus?.following ? "border border-gray-600 text-white" : "text-white"}`}
-              style={
-                followStatus?.following
-                  ? {}
-                  : { background: "linear-gradient(135deg,#1E90FF,#0047AB)" }
-              }
+            <Link
+              to="/upload"
+              className="flex-1 border border-gray-600 text-white font-semibold py-2.5 rounded-xl text-center text-sm"
             >
-              {followStatus?.following ? "A seguir" : "Seguir"}
-            </button>
-            <button
-              onClick={() => (user ? messageMutation.mutate() : navigate({ to: "/login" }))}
-              disabled={messageMutation.isPending}
-              className="flex-1 border border-gray-600 text-white py-2.5 rounded-xl font-semibold text-sm hover:border-blue-600 transition-colors"
+              Publicar vídeo
+            </Link>
+            <Link
+              to="/settings"
+              className="flex-1 border border-gray-600 text-white font-semibold py-2.5 rounded-xl text-center text-sm"
             >
-              Mensagem
-            </button>
+              Editar perfil
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 w-full max-w-xs">
+            <div className="flex gap-3">
+              <button
+                onClick={() => (user ? followMutation.mutate() : navigate({ to: "/login" }))}
+                disabled={followMutation.isPending}
+                className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-colors ${followStatus?.following ? "border border-gray-600 text-white" : "text-white"}`}
+                style={followStatus?.following ? {} : { background: "linear-gradient(135deg,#1E90FF,#0047AB)" }}
+              >
+                {followStatus?.following ? "A seguir" : "Seguir"}
+              </button>
+              <button
+                onClick={() => (user ? messageMutation.mutate() : navigate({ to: "/login" }))}
+                disabled={messageMutation.isPending}
+                className="flex-1 border border-gray-600 text-white py-2.5 rounded-xl font-semibold text-sm hover:border-blue-600 transition-colors"
+              >
+                Mensagem
+              </button>
+            </div>
+            {profile.isPremium && (
+              <button
+                onClick={() => (user ? subscribeMutation.mutate() : navigate({ to: "/login" }))}
+                disabled={subscribeMutation.isPending}
+                className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                  subscribeStatus?.subscribed
+                    ? "border border-orange-500 text-orange-400"
+                    : "bg-orange-500 text-white hover:bg-orange-600"
+                }`}
+              >
+                {subscribeStatus?.subscribed ? "✓ Subscrito" : "⭐ Subscrever"}
+              </button>
+            )}
           </div>
         )}
       </div>

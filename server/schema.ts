@@ -214,3 +214,17 @@ export const verifiedUsers = mysqlTable("verified_users", {
   verifiedAt: timestamp("verified_at").defaultNow().notNull(),
   verifiedBy: int("verified_by").notNull(), // admin user id
 });
+
+// Subscritores de criadores premium (diferente de "seguir")
+export const creatorSubscribers = mysqlTable(
+  "creator_subscribers",
+  {
+    id: serial("id").primaryKey(),
+    subscriberId: int("subscriber_id").notNull(), // quem subscreve
+    creatorId: int("creator_id").notNull(),       // criador premium
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueSub: uniqueIndex("unique_creator_sub").on(table.subscriberId, table.creatorId),
+  }),
+);

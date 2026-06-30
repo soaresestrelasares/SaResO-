@@ -8,6 +8,7 @@ export interface User {
   followersCount?: number;
   followingCount?: number;
   videosCount?: number;
+  subscribersCount?: number;
   isPremium?: boolean;
   isVerified?: boolean;
 }
@@ -122,7 +123,7 @@ export interface Notification {
   id: number;
   userId: number;
   actorId: number;
-  type: "follow" | "like" | "comment" | "message" | "job_application" | "mention";
+  type: "follow" | "like" | "comment" | "message" | "job_application" | "mention" | "subscribe";
   entityId: number | null;
   readAt: string | null;
   createdAt: string;

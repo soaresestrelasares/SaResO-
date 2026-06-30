@@ -17,6 +17,7 @@ import { reportsRouter } from "./routes/reports.js";
 import { notificationsRouter } from "./routes/notifications.js";
 import { livesRouter } from "./routes/lives.js";
 import { adminRouter } from "./routes/admin.js";
+import { subscribersRouter } from "./routes/subscribers.js";
 import { ensureTables } from "./migrate.js";
 
 const authLimiter = rateLimit({
@@ -70,6 +71,7 @@ export function createApp() {
   app.use("/api/notifications", notificationsRouter);
   app.use("/api/lives", livesRouter);
   app.use("/api/admin", adminRouter);
+  app.use("/api/creators", subscribersRouter);
   app.post("/api/db-migrate", async (req, res) => {
     const secret = process.env.JWT_SECRET;
     if (!secret || req.headers["x-migrate-secret"] !== secret) {

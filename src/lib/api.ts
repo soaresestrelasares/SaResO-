@@ -160,4 +160,14 @@ export const api = {
   getAdminReports: () => request<any[]>("/admin/reports"),
   resolveReport: (id: number) =>
     request<{ ok: boolean }>(`/admin/reports/${id}/resolve`, { method: "PATCH" }),
+
+  // Subscritores de criadores premium
+  subscribeToCreator: (creatorId: number) =>
+    request<{ subscribed: boolean }>(`/creators/${creatorId}/subscribe`, { method: "POST" }),
+  getSubscribeStatus: (creatorId: number) =>
+    request<{ subscribed: boolean; subscribersCount: number }>(`/creators/${creatorId}/subscribe-status`),
+  getCreatorSubscribers: (creatorId: number) =>
+    request<{ id: number; username: string; displayName: string; avatarUrl: string | null; subscribedAt: string }[]>(
+      `/creators/${creatorId}/subscribers`,
+    ),
 };
