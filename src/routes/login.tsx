@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { SaResoLogoIcon, SaResoWordmark } from "@/components/SaResoLogo";
+import { SaResoLogoIcon } from "@/components/SaResoLogo";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -23,76 +23,68 @@ function LoginPage() {
     try {
       const res = await api.login({ email, password });
       login(res.token, res.user);
-      navigate({ to: "/" });
+      void navigate({ to: "/" });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : "Email ou password incorretos.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-6 max-w-[480px] mx-auto">
+    <div className="min-h-screen bg-[#0A0F1E] flex flex-col items-center justify-center px-5">
       <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="text-center mb-10 flex flex-col items-center gap-3">
-          <SaResoLogoIcon size={72} />
-          <h1 className="text-4xl font-black">
-            <SaResoWordmark />
-          </h1>
-          <p className="text-gray-400 text-sm">Log in to your account</p>
+        <div className="text-center mb-8 flex flex-col items-center gap-2">
+          <SaResoLogoIcon size={64} />
+          <h1 className="text-3xl font-black text-white tracking-tight">SaResO</h1>
+          <p className="text-gray-400 text-sm">Bem-vindo de volta</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
-              className="w-full bg-gray-900 text-white rounded-lg px-4 py-3.5 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-600 transition-colors"
-            />
-          </div>
-          <div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              required
-              className="w-full bg-gray-900 text-white rounded-lg px-4 py-3.5 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-600 transition-colors"
-            />
-          </div>
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            required
+            className="w-full bg-[#111827] text-white rounded-xl px-4 py-3.5 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-500 transition-colors text-sm"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            required
+            autoComplete="current-password"
+            className="w-full bg-[#111827] text-white rounded-xl px-4 py-3.5 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-500 transition-colors text-sm"
+          />
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full text-white font-bold py-3.5 rounded-lg disabled:opacity-60 transition-opacity text-base"
-            style={{ background: "linear-gradient(135deg, #1E90FF 0%, #0047AB 100%)" }}
+            className="w-full text-white font-bold py-3.5 rounded-xl disabled:opacity-50 text-sm mt-1"
+            style={{ background: "linear-gradient(135deg,#1E90FF 0%,#0047AB 100%)" }}
           >
-            {loading ? "Logging in..." : "Log in"}
+            {loading ? "A entrar…" : "Entrar"}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-gray-400 text-sm">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-blue-400 font-semibold">
-              Sign up
-            </Link>
-          </p>
-        </div>
+        <p className="text-center text-gray-500 text-sm mt-6">
+          Ainda não tens conta?{" "}
+          <Link to="/register" className="text-blue-400 font-semibold">
+            Registar
+          </Link>
+        </p>
 
-        <div className="mt-4 text-center">
-          <p className="text-gray-600 text-xs">Demo: alex@example.com / password123</p>
-        </div>
-
-        <div className="mt-10 text-center">
-          <p className="text-gray-700 text-xs">
-            © {new Date().getFullYear()} SaResO. All rights reserved.
-          </p>
-        </div>
+        <p className="text-center text-gray-700 text-xs mt-8">
+          © {new Date().getFullYear()} SaResO. Todos os direitos reservados.
+        </p>
       </div>
     </div>
   );

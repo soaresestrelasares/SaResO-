@@ -25,7 +25,12 @@ export function getPool(): Pool {
     throw new DatabaseUnavailableError("DATABASE_URL is not configured for this project.");
   }
 
-  pool ??= mysql.createPool(databaseUrl);
+  pool ??= mysql.createPool({
+    uri: databaseUrl,
+    ssl: { rejectUnauthorized: false },
+    waitForConnections: true,
+    connectionLimit: 10,
+  });
   return pool;
 }
 

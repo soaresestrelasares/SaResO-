@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { SaResoLogoIcon, SaResoWordmark } from "@/components/SaResoLogo";
+import { SaResoLogoIcon } from "@/components/SaResoLogo";
 
 export const Route = createFileRoute("/register")({
   component: RegisterPage,
@@ -10,98 +10,113 @@ export const Route = createFileRoute("/register")({
 
 function RegisterPage() {
   const [form, setForm] = useState({ username: "", displayName: "", email: "", password: "" });
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!form.displayName.trim()) e.displayName = "Insere o teu nome";
+    if (!form.username.trim()) e.username = "Insere um username";
+    else if (form.username.length < 3) e.username = "Mínimo 3 caracteres";
+    else if (!/^[a-z0-9_.]+$/.test(form.username)) e.username = "Só letras minúsculas, números, _ e .";
+    if (!form.email.trim()) e.email = "Insere o teu email";
+    if (!form.password) e.password = "Insere uma password";
+    else if (form.password.length < 6) e.password = "Mínimo 6 caracteres";
+    return e;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setLoading(true);
-    setError("");
+    setErrors({});
     try {
       const res = await api.register(form);
       login(res.token, res.user);
-      navigate({ to: "/" });
+      void navigate({ to: "/" });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      const msg = err instanceof Error ? err.message : "Erro ao criar conta";
+      if (msg.toLowerCase().includes("email")) setErrors({ email: msg });
+      else if (msg.toLowerCase().includes("username")) setErrors({ username: msg });
+      else setErrors({ general: msg });
     } finally {
       setLoading(false);
     }
   };
 
-  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
+    setErrors((prev) => ({ ...prev, [field]: "", general: "" }));
+  };
+
+  const field = (
+    name: keyof typeof form,
+    placeholder: string,
+    type = "text",
+    hint?: string,
+  ) => (
+    <div className="space-y-1">
+      <input
+        type={type}
+        value={form[name]}
+        onChange={set(name)}
+        placeholder={placeholder}
+        required
+        autoComplete={type === "password" ? "new-password" : undefined}
+        className={`w-full bg-[#111827] text-white rounded-xl px-4 py-3.5 outline-none placeholder-gray-500 border transition-colors text-sm ${
+          errors[name] ? "border-red-500" : "border-gray-800 focus:border-blue-500"
+        }`}
+      />
+      {hint && !errors[name] && <p className="text-gray-600 text-xs px-1">{hint}</p>}
+      {errors[name] && <p className="text-red-400 text-xs px-1">{errors[name]}</p>}
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-6 max-w-[480px] mx-auto">
+    <div className="min-h-screen bg-[#0A0F1E] flex flex-col items-center justify-center px-5">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-10 flex flex-col items-center gap-3">
-          <SaResoLogoIcon size={72} />
-          <h1 className="text-4xl font-black">
-            <SaResoWordmark />
-          </h1>
-          <p className="text-gray-400 text-sm">Create your account</p>
+        {/* Logo */}
+        <div className="text-center mb-8 flex flex-col items-center gap-2">
+          <SaResoLogoIcon size={64} />
+          <h1 className="text-3xl font-black text-white tracking-tight">SaResO</h1>
+          <p className="text-gray-400 text-sm">Cria a tua conta gratuita</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            value={form.username}
-            onChange={set("username")}
-            placeholder="Username"
-            required
-            className="w-full bg-gray-900 text-white rounded-lg px-4 py-3.5 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-600 transition-colors"
-          />
-          <input
-            type="text"
-            value={form.displayName}
-            onChange={set("displayName")}
-            placeholder="Display Name"
-            required
-            className="w-full bg-gray-900 text-white rounded-lg px-4 py-3.5 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-600 transition-colors"
-          />
-          <input
-            type="email"
-            value={form.email}
-            onChange={set("email")}
-            placeholder="Email"
-            required
-            className="w-full bg-gray-900 text-white rounded-lg px-4 py-3.5 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-600 transition-colors"
-          />
-          <input
-            type="password"
-            value={form.password}
-            onChange={set("password")}
-            placeholder="Password"
-            required
-            className="w-full bg-gray-900 text-white rounded-lg px-4 py-3.5 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-600 transition-colors"
-          />
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {field("displayName", "Nome completo")}
+          {field("username", "Username", "text", "Apenas letras minúsculas, números, _ e .")}
+          {field("email", "Email", "email")}
+          {field("password", "Password", "password", "Mínimo 6 caracteres")}
+
+          {errors.general && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+              <p className="text-red-400 text-sm">{errors.general}</p>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full text-white font-bold py-3.5 rounded-lg disabled:opacity-60 text-base"
-            style={{ background: "linear-gradient(135deg, #1E90FF 0%, #0047AB 100%)" }}
+            className="w-full text-white font-bold py-3.5 rounded-xl disabled:opacity-50 text-sm mt-2"
+            style={{ background: "linear-gradient(135deg,#1E90FF 0%,#0047AB 100%)" }}
           >
-            {loading ? "Creating account..." : "Sign up"}
+            {loading ? "A criar conta…" : "Criar conta"}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-gray-400 text-sm">
-            Already have an account?{" "}
-            <Link to="/login" className="text-blue-400 font-semibold">
-              Log in
-            </Link>
-          </p>
-        </div>
+        <p className="text-center text-gray-500 text-sm mt-6">
+          Já tens conta?{" "}
+          <Link to="/login" className="text-blue-400 font-semibold">
+            Entrar
+          </Link>
+        </p>
 
-        <div className="mt-10 text-center">
-          <p className="text-gray-700 text-xs">
-            © {new Date().getFullYear()} SaResO. All rights reserved.
-          </p>
-        </div>
+        <p className="text-center text-gray-700 text-xs mt-8">
+          © {new Date().getFullYear()} SaResO. Todos os direitos reservados.
+        </p>
       </div>
     </div>
   );
