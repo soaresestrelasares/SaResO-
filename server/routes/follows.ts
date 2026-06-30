@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getDb } from "../db.js";
-import { follows, users } from "../schema.js";
+import { follows, users, notifications } from "../schema.js";
 import { eq, sql } from "drizzle-orm";
 import { authMiddleware, AuthRequest } from "../middleware/auth.js";
 
@@ -26,6 +26,16 @@ followsRouter.post("/:userId", authMiddleware, async (req: AuthRequest, res) => 
     res.json({ following: false });
   } else {
     await db.insert(follows).values({ followerId, followingId });
+    // Trigger follow notification
+    try {
+      await db.insert(notifications).values({
+        userId: followingId,
+        actorId: followerId,
+        type: "follow",
+      });
+    } catch {
+      // no-op — notification failure should not break the follow
+    }
     res.json({ following: true });
   }
 });

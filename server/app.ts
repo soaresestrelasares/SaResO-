@@ -14,6 +14,9 @@ import { companiesRouter } from "./routes/companies.js";
 import { jobsRouter } from "./routes/jobs.js";
 import { conversationsRouter } from "./routes/conversations.js";
 import { reportsRouter } from "./routes/reports.js";
+import { notificationsRouter } from "./routes/notifications.js";
+import { livesRouter } from "./routes/lives.js";
+import { adminRouter } from "./routes/admin.js";
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
@@ -63,6 +66,9 @@ export function createApp() {
   app.use("/api/jobs", jobsRouter);
   app.use("/api/conversations", conversationsRouter);
   app.use("/api/reports", reportsRouter);
+  app.use("/api/notifications", notificationsRouter);
+  app.use("/api/lives", livesRouter);
+  app.use("/api/admin", adminRouter);
   app.use("/api", (_request, response) => {
     response.status(404).json({ error: "API route not found." });
   });

@@ -8,6 +8,7 @@ import type {
   JobApplication,
   Conversation,
   Message,
+  Notification,
 } from "./api-types";
 
 const BASE = "/api";
@@ -38,6 +39,16 @@ export const api = {
   login: (data: { email: string; password: string }) =>
     request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
   me: () => request<User>("/auth/me"),
+  forgotPassword: (email: string) =>
+    request<{ message: string; code?: string }>("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (data: { email: string; code: string; newPassword: string }) =>
+    request<{ message: string }>("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   // Videos
   getFeed: (page = 0) => request<Video[]>(`/videos?page=${page}`),
@@ -58,8 +69,17 @@ export const api = {
 
   // Users
   getUser: (username: string) => request<User>(`/users/${username}`),
-  updateMe: (data: Partial<User>) =>
+  updateMe: (data: Partial<User> & { username?: string }) =>
     request<User>("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
+  updateProfile: (data: Partial<User> & { username?: string }) =>
+    request<User>("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
+  getUserOnline: (username: string) =>
+    request<{ online: boolean }>(`/users/${username}/online`),
+  blockUser: (userId: number) =>
+    request<{ ok: boolean }>(`/users/block/${userId}`, { method: "POST" }),
+  unblockUser: (userId: number) =>
+    request<{ ok: boolean }>(`/users/block/${userId}`, { method: "DELETE" }),
+  getBlockedUsers: () => request<User[]>("/users/blocked"),
 
   // Follows
   toggleFollow: (userId: number) =>
@@ -122,4 +142,20 @@ export const api = {
   // Reports
   report: (data: { contentType: string; contentId: number; reason: string }) =>
     request<{ ok: boolean }>("/reports", { method: "POST", body: JSON.stringify(data) }),
+
+  // Notifications
+  getNotifications: () => request<Notification[]>("/notifications"),
+  markNotificationRead: (id: number) =>
+    request<{ ok: boolean }>(`/notifications/${id}/read`, { method: "PATCH" }),
+  markAllNotificationsRead: () =>
+    request<{ ok: boolean }>("/notifications/read-all", { method: "POST" }),
+
+  // Admin
+  getAdminStats: () =>
+    request<{ userCount: number; videoCount: number; reportCount: number; pendingReports: number }>(
+      "/admin/stats",
+    ),
+  getAdminReports: () => request<any[]>("/admin/reports"),
+  resolveReport: (id: number) =>
+    request<{ ok: boolean }>(`/admin/reports/${id}/resolve`, { method: "PATCH" }),
 };

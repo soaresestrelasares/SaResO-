@@ -34,6 +34,9 @@ extraWords.forEach((w) => {
   }
 });
 
+// Exported Set of online user IDs (for online status checks)
+export const onlineUsers = new Set<number>();
+
 export function initSocket(httpServer: HttpServer) {
   const io = new SocketServer(httpServer, {
     cors: { origin: "*", methods: ["GET", "POST"] },
@@ -57,11 +60,12 @@ export function initSocket(httpServer: HttpServer) {
   });
 
   // Map userId -> socketId for call signaling
-  const onlineUsers = new Map<number, string>();
+  const socketMap = new Map<number, string>();
 
   io.on("connection", (socket) => {
     const userId = (socket as unknown as { userId: number }).userId;
-    onlineUsers.set(userId, socket.id);
+    socketMap.set(userId, socket.id);
+    onlineUsers.add(userId);
     socket.join(`user:${userId}`);
 
     // ── Chat ──────────────────────────────────────────────
@@ -122,7 +126,7 @@ export function initSocket(httpServer: HttpServer) {
         offer: unknown;
         callType: "video" | "audio";
       }) => {
-        const targetSocket = onlineUsers.get(targetUserId);
+        const targetSocket = socketMap.get(targetUserId);
         if (!targetSocket) {
           socket.emit("call:error", { error: "Utilizador não está online" });
           return;
@@ -132,30 +136,31 @@ export function initSocket(httpServer: HttpServer) {
     );
 
     socket.on("call:answer", ({ callerId, answer }: { callerId: number; answer: unknown }) => {
-      const callerSocket = onlineUsers.get(callerId);
+      const callerSocket = socketMap.get(callerId);
       if (callerSocket) io.to(callerSocket).emit("call:answered", { answer });
     });
 
     socket.on(
       "call:ice-candidate",
       ({ targetUserId, candidate }: { targetUserId: number; candidate: unknown }) => {
-        const targetSocket = onlineUsers.get(targetUserId);
+        const targetSocket = socketMap.get(targetUserId);
         if (targetSocket)
           io.to(targetSocket).emit("call:ice-candidate", { candidate, fromUserId: userId });
       },
     );
 
     socket.on("call:reject", ({ callerId }: { callerId: number }) => {
-      const callerSocket = onlineUsers.get(callerId);
+      const callerSocket = socketMap.get(callerId);
       if (callerSocket) io.to(callerSocket).emit("call:rejected", { userId });
     });
 
     socket.on("call:end", ({ targetUserId }: { targetUserId: number }) => {
-      const targetSocket = onlineUsers.get(targetUserId);
+      const targetSocket = socketMap.get(targetUserId);
       if (targetSocket) io.to(targetSocket).emit("call:ended", { userId });
     });
 
     socket.on("disconnect", () => {
+      socketMap.delete(userId);
       onlineUsers.delete(userId);
     });
   });

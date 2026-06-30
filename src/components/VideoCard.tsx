@@ -19,6 +19,7 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
+  const [shareToast, setShareToast] = useState("");
   const { user } = useAuth();
 
   useEffect(() => {
@@ -48,6 +49,32 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
       setLiked((l) => !l);
       setLikesCount((c) => (liked ? c + 1 : c - 1));
     }
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/?v=${video.id}`;
+    const shareData = {
+      title: video.title,
+      text: `Vê este vídeo de @${video.username} no SaResO!`,
+      url,
+    };
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        setShareToast("Partilhado!");
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShareToast("Link copiado!");
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(url);
+        setShareToast("Link copiado!");
+      } catch {
+        setShareToast("Não foi possível partilhar.");
+      }
+    }
+    setTimeout(() => setShareToast(""), 2500);
   };
 
   const formatCount = (n: number) => {
@@ -83,6 +110,13 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
 
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+
+      {/* Share toast */}
+      {shareToast && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs font-semibold px-4 py-2 rounded-full z-50 pointer-events-none">
+          {shareToast}
+        </div>
+      )}
 
       {/* Right side actions */}
       <div className="absolute right-3 bottom-28 flex flex-col items-center gap-5">
@@ -124,15 +158,15 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
           <div className="p-2 rounded-full text-white">
             <BookmarkIcon className="w-7 h-7" strokeWidth={1.5} />
           </div>
-          <span className="text-white text-xs font-semibold">Save</span>
+          <span className="text-white text-xs font-semibold">Guardar</span>
         </button>
 
         {/* Share */}
-        <button className="flex flex-col items-center gap-1">
+        <button onClick={handleShare} className="flex flex-col items-center gap-1">
           <div className="p-2 rounded-full text-white">
             <Share2 className="w-7 h-7" strokeWidth={1.5} />
           </div>
-          <span className="text-white text-xs font-semibold">Share</span>
+          <span className="text-white text-xs font-semibold">Partilhar</span>
         </button>
 
         {/* Music disc */}

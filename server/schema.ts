@@ -142,3 +142,45 @@ export const reports = mysqlTable("reports", {
   resolved: int("resolved").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const notifications = mysqlTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: int("user_id").notNull(), // recipient
+  actorId: int("actor_id").notNull(), // who triggered
+  type: varchar("type", { length: 30 }).notNull(), // follow, like, comment, message, job_application
+  entityId: int("entity_id"), // related entity (video id, job id, etc.)
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const blockedUsers = mysqlTable(
+  "blocked_users",
+  {
+    id: serial("id").primaryKey(),
+    blockerId: int("blocker_id").notNull(),
+    blockedId: int("blocked_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueBlock: uniqueIndex("unique_block").on(table.blockerId, table.blockedId),
+  }),
+);
+
+export const lives = mysqlTable("lives", {
+  id: serial("id").primaryKey(),
+  userId: int("user_id").notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  status: varchar("status", { length: 10 }).default("live").notNull(), // live, ended
+  viewerCount: int("viewer_count").default(0).notNull(),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  endedAt: timestamp("ended_at"),
+});
+
+export const passwordResetTokens = mysqlTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: int("user_id").notNull(),
+  token: varchar("token", { length: 64 }).notNull(),
+  used: int("used").default(0).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

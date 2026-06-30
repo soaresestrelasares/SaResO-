@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getDb } from "../db.js";
-import { comments, users, videos } from "../schema.js";
+import { comments, users, videos, notifications } from "../schema.js";
 import { eq, desc, sql } from "drizzle-orm";
 import { authMiddleware, AuthRequest } from "../middleware/auth.js";
 import { moderateContent } from "../middleware/moderation.js";
@@ -48,5 +48,23 @@ commentsRouter.post("/:videoId", authMiddleware, moderateContent, async (req: Au
     .update(videos)
     .set({ commentsCount: sql`${videos.commentsCount} + 1` })
     .where(eq(videos.id, videoId));
+  // Trigger comment notification to video owner
+  try {
+    const [video] = await db
+      .select({ userId: videos.userId })
+      .from(videos)
+      .where(eq(videos.id, videoId))
+      .limit(1);
+    if (video && Number(video.userId) !== req.userId!) {
+      await db.insert(notifications).values({
+        userId: Number(video.userId),
+        actorId: req.userId!,
+        type: "comment",
+        entityId: videoId,
+      });
+    }
+  } catch {
+    // no-op
+  }
   res.json({ id: Number(result.insertId), userId: req.userId!, videoId, content });
 });

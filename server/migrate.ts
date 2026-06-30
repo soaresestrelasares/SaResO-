@@ -128,6 +128,47 @@ export async function ensureTables(): Promise<void> {
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        actor_id INT NOT NULL,
+        type VARCHAR(30) NOT NULL,
+        entity_id INT,
+        read_at TIMESTAMP NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS blocked_users (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        blocker_id INT NOT NULL,
+        blocked_id INT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_block (blocker_id, blocked_id)
+      )
+    `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS lives (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        title VARCHAR(200) NOT NULL,
+        status VARCHAR(10) NOT NULL DEFAULT 'live',
+        viewer_count INT DEFAULT 0 NOT NULL,
+        started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        ended_at TIMESTAMP NULL
+      )
+    `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        token VARCHAR(64) NOT NULL,
+        used INT DEFAULT 0 NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
     console.log("[sareso] All tables ready.");
   } finally {
     conn.release();

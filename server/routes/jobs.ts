@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getDb } from "../db.js";
-import { jobs, companies, jobApplications, users } from "../schema.js";
+import { jobs, companies, jobApplications, users, notifications } from "../schema.js";
 import { eq, desc, like, and, or, sql } from "drizzle-orm";
 import { authMiddleware, optionalAuth, AuthRequest } from "../middleware/auth.js";
 import { moderateContent } from "../middleware/moderation.js";
@@ -140,6 +140,31 @@ jobsRouter.post("/:id/apply", authMiddleware, moderateContent, async (req: AuthR
     .update(jobs)
     .set({ applicationsCount: sql`${jobs.applicationsCount} + 1` })
     .where(eq(jobs.id, jobId));
+  // Trigger job_application notification to company owner
+  try {
+    const [job] = await db
+      .select({ companyId: jobs.companyId })
+      .from(jobs)
+      .where(eq(jobs.id, jobId))
+      .limit(1);
+    if (job) {
+      const [company] = await db
+        .select({ ownerId: companies.ownerId })
+        .from(companies)
+        .where(eq(companies.id, job.companyId))
+        .limit(1);
+      if (company && Number(company.ownerId) !== req.userId!) {
+        await db.insert(notifications).values({
+          userId: Number(company.ownerId),
+          actorId: req.userId!,
+          type: "job_application",
+          entityId: jobId,
+        });
+      }
+    }
+  } catch {
+    // no-op
+  }
   res.json({ ok: true });
 });
 

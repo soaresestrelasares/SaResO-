@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getDb } from "../db.js";
-import { videos, users, likes } from "../schema.js";
+import { videos, users, likes, notifications } from "../schema.js";
 import { eq, desc, sql } from "drizzle-orm";
 import { authMiddleware, optionalAuth, AuthRequest } from "../middleware/auth.js";
 import { moderateContent } from "../middleware/moderation.js";
@@ -148,6 +148,24 @@ videosRouter.post("/:id/like", authMiddleware, async (req: AuthRequest, res) => 
       .update(videos)
       .set({ likesCount: sql`${videos.likesCount} + 1` })
       .where(eq(videos.id, videoId));
+    // Trigger like notification to video owner
+    try {
+      const [video] = await db
+        .select({ userId: videos.userId })
+        .from(videos)
+        .where(eq(videos.id, videoId))
+        .limit(1);
+      if (video && Number(video.userId) !== userId) {
+        await db.insert(notifications).values({
+          userId: Number(video.userId),
+          actorId: userId,
+          type: "like",
+          entityId: videoId,
+        });
+      }
+    } catch {
+      // no-op
+    }
     res.json({ liked: true });
   }
 });

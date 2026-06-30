@@ -111,3 +111,16 @@ export interface Message {
   senderDisplayName?: string;
   senderAvatarUrl?: string | null;
 }
+
+export interface Notification {
+  id: number;
+  userId: number;
+  actorId: number;
+  type: "follow" | "like" | "comment" | "message" | "job_application";
+  entityId: number | null;
+  readAt: string | null;
+  createdAt: string;
+  actorUsername: string;
+  actorDisplayName: string;
+  actorAvatarUrl: string | null;
+}
