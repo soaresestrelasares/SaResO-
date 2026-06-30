@@ -1,17 +1,12 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:22-alpine AS deps
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN corepack enable \
-  && corepack prepare pnpm@10.12.2 --activate \
-  && pnpm install --frozen-lockfile
-
-FROM deps AS builder
-WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@10.12.2 --activate && pnpm install --frozen-lockfile
 
 COPY . .
 RUN pnpm build
@@ -23,10 +18,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN corepack enable \
-  && corepack prepare pnpm@10.12.2 --activate \
-  && pnpm install --prod --frozen-lockfile
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+RUN corepack enable && corepack prepare pnpm@10.12.2 --activate && pnpm install --prod --frozen-lockfile
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/drizzle ./drizzle
