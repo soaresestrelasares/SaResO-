@@ -1,4 +1,6 @@
 import express from "express";
+import helmet from "helmet";
+import { rateLimit } from "express-rate-limit";
 import { serverConfig } from "./config.js";
 import { errorHandler } from "./middleware/error.js";
 import { healthRouter } from "./routes/health.js";
@@ -13,12 +15,43 @@ import { jobsRouter } from "./routes/jobs.js";
 import { conversationsRouter } from "./routes/conversations.js";
 import { reportsRouter } from "./routes/reports.js";
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 20,
+  message: { error: "Demasiadas tentativas. Tenta novamente em 15 minutos." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 120,
+  message: { error: "Demasiados pedidos. Tenta novamente em 1 minuto." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 export function createApp() {
   const app = express();
 
   app.disable("x-powered-by");
 
-  app.use(express.json({ limit: "10mb" }));
+  // Cabeçalhos de segurança HTTP
+  app.use(
+    helmet({
+      contentSecurityPolicy: serverConfig.isProduction
+        ? undefined
+        : false, // desativar em dev para Vite HMR funcionar
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
+
+  app.use(express.json({ limit: "2mb" }));
+
+  // Rate limiting
+  app.use("/api/auth", authLimiter);
+  app.use("/api", apiLimiter);
+
   app.use("/api/health", healthRouter);
   app.use("/api/auth", authRouter);
   app.use("/api/videos", videosRouter);
