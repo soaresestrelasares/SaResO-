@@ -19,6 +19,7 @@ import { livesRouter } from "./routes/lives.js";
 import { adminRouter } from "./routes/admin.js";
 import { subscribersRouter } from "./routes/subscribers.js";
 import { billingRouter } from "./routes/billing.js";
+import { uploadRouter } from "./routes/upload.js";
 import { ensureTables } from "./migrate.js";
 
 const authLimiter = rateLimit({
@@ -45,9 +46,7 @@ export function createApp() {
   // Cabeçalhos de segurança HTTP
   app.use(
     helmet({
-      contentSecurityPolicy: serverConfig.isProduction
-        ? undefined
-        : false, // desativar em dev para Vite HMR funcionar
+      contentSecurityPolicy: serverConfig.isProduction ? undefined : false, // desativar em dev para Vite HMR funcionar
       crossOriginEmbedderPolicy: false,
     }),
   );
@@ -55,11 +54,9 @@ export function createApp() {
   app.use(express.json({ limit: "2mb" }));
 
   // Webhook Stripe precisa de raw body — registar antes do express.json
-  app.post(
-    "/api/billing/webhook",
-    express.raw({ type: "application/json" }),
-    (req, res, next) => { next(); },
-  );
+  app.post("/api/billing/webhook", express.raw({ type: "application/json" }), (req, res, next) => {
+    next();
+  });
 
   // Rate limiting
   app.use("/api/auth", authLimiter);
@@ -73,6 +70,7 @@ export function createApp() {
   app.use("/api/follows", followsRouter);
   app.use("/api/users", usersRouter);
   app.use("/api/seed", seedRouter);
+  app.use("/api/upload", uploadRouter);
   app.use("/api/companies", companiesRouter);
   app.use("/api/jobs", jobsRouter);
   app.use("/api/conversations", conversationsRouter);

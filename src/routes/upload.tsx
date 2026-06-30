@@ -1,56 +1,145 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useState, useRef } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { BottomNav } from "@/components/BottomNav";
-import { ArrowLeft, Upload } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { ArrowLeft, Upload, Video, Image, X, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/upload")({
   component: UploadPage,
 });
 
+type UploadFile = {
+  file: File;
+  preview: string;
+  type: "video" | "image";
+};
+
 function UploadPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ title: "", description: "", videoUrl: "", thumbnailUrl: "" });
-  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [files, setFiles] = useState<UploadFile[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   if (!user) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
-        <p className="text-gray-400 mb-4">You need to log in to upload videos</p>
+        <p className="text-gray-400 mb-4">Precisas de iniciar sessão para publicar</p>
         <Link to="/login" className="bg-[#FE2C55] text-white px-6 py-3 rounded-lg font-semibold">
-          Log in
+          Entrar
         </Link>
         <BottomNav />
       </div>
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.videoUrl) {
-      setError("Video URL is required");
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files || []);
+    if (selected.length === 0) return;
+
+    const newFiles: UploadFile[] = selected.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      type: file.type.startsWith("video/") ? "video" : "image",
+    }));
+
+    // Keep at most 1 video + up to 9 images, or just images
+    const hasVideo =
+      files.some((f) => f.type === "video") || newFiles.some((f) => f.type === "video");
+    const totalCount = files.length + newFiles.length;
+    if (hasVideo && totalCount > 1) {
+      toast.error("Publicação com vídeo só pode ter 1 ficheiro. Escolhe vídeo OU fotos.");
       return;
     }
-    setLoading(true);
+    if (totalCount > 10) {
+      toast.error("Máximo de 10 ficheiros por publicação.");
+      return;
+    }
+
+    setFiles((prev) => [...prev, ...newFiles]);
+    setError("");
+  };
+
+  const removeFile = (idx: number) => {
+    setFiles((prev) => {
+      URL.revokeObjectURL(prev[idx].preview);
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
+
+  const uploadFiles = async (): Promise<{
+    videoUrl?: string;
+    thumbnailUrl?: string;
+    imageUrls?: string[];
+  }> => {
+    if (files.length === 0) throw new Error("Seleciona pelo menos um ficheiro.");
+
+    const formData = new FormData();
+    files.forEach((f) => formData.append("files", f.file));
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+      },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Erro ao carregar ficheiros.");
+    }
+    const data = await res.json();
+    const uploaded = data.files as { url: string; thumbnailUrl?: string; resourceType: string }[];
+
+    const video = uploaded.find((u) => u.resourceType === "video");
+    const images = uploaded.filter((u) => u.resourceType === "image").map((u) => u.url);
+
+    return {
+      videoUrl: video?.url,
+      thumbnailUrl: video?.thumbnailUrl || images[0],
+      imageUrls: images,
+    };
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (files.length === 0) {
+      setError("Seleciona um vídeo ou fotos.");
+      return;
+    }
+    if (!title.trim()) {
+      setError("Título obrigatório.");
+      return;
+    }
+
+    setUploading(true);
     setError("");
     try {
-      await api.createVideo(form);
+      const { videoUrl, thumbnailUrl, imageUrls } = await uploadFiles();
+      await api.createVideo({
+        title,
+        description,
+        videoUrl: videoUrl || "",
+        thumbnailUrl: thumbnailUrl || "",
+      });
       setSuccess(true);
       setTimeout(() => navigate({ to: "/" }), 2000);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : "Erro ao publicar.");
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
   };
 
-  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [field]: e.target.value }));
+  const hasVideo = files.some((f) => f.type === "video");
 
   return (
     <div className="min-h-screen bg-black text-white max-w-[480px] mx-auto pb-20">
@@ -58,110 +147,145 @@ function UploadPage() {
         <Link to="/">
           <ArrowLeft className="w-6 h-6" />
         </Link>
-        <h1 className="text-lg font-bold">Post a video</h1>
+        <h1 className="text-lg font-bold flex-1">Nova publicação</h1>
+        <Button
+          onClick={handleSubmit}
+          disabled={uploading || files.length === 0}
+          className="bg-[#FE2C55] hover:bg-[#d92546] text-white px-4 h-9"
+        >
+          {uploading ? "A publicar..." : "Publicar"}
+        </Button>
       </div>
 
       {success ? (
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+            <Check className="w-8 h-8 text-white" />
           </div>
-          <p className="text-white font-semibold">Video posted successfully!</p>
-          <p className="text-gray-400 text-sm">Redirecting to feed...</p>
+          <p className="text-white font-semibold">Publicado com sucesso!</p>
+          <p className="text-gray-400 text-sm">A redirecionar para o feed...</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="p-4 space-y-5">
           {/* Preview area */}
-          <div className="w-full aspect-[9/16] max-h-64 bg-gray-900 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-gray-700">
-            {form.videoUrl ? (
-              <video
-                src={form.videoUrl}
-                className="w-full h-full object-cover rounded-xl"
-                muted
-                poster={form.thumbnailUrl || undefined}
-              />
-            ) : (
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full min-h-64 rounded-2xl flex flex-col items-center justify-center border-2 border-dashed border-gray-700 bg-gray-900 overflow-hidden cursor-pointer hover:border-[#FE2C55]/50 transition"
+          >
+            {files.length === 0 ? (
               <>
-                <Upload className="w-10 h-10 text-gray-500 mb-2" />
-                <p className="text-gray-500 text-sm text-center">
-                  Paste a video URL below
+                <div className="flex gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
+                    <Video className="w-6 h-6 text-gray-400" />
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
+                    <Image className="w-6 h-6 text-gray-400" />
+                  </div>
+                </div>
+                <p className="text-white font-medium">Toca para adicionar vídeo ou fotos</p>
+                <p className="text-gray-500 text-sm text-center px-6 mt-2">
+                  Podes carregar 1 vídeo (com som) ou até 10 fotos.
                   <br />
-                  to preview
+                  Funciona com CapCut, Galeria, etc.
                 </p>
               </>
+            ) : (
+              <div className="w-full p-3">
+                <div className={`grid gap-2 ${files.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                  {files.map((f, idx) => (
+                    <div
+                      key={idx}
+                      className="relative rounded-xl overflow-hidden aspect-[9/16] bg-black"
+                    >
+                      {f.type === "video" ? (
+                        <video
+                          src={f.preview}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        <img src={f.preview} alt="preview" className="w-full h-full object-cover" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(idx);
+                        }}
+                        className="absolute top-2 right-2 w-7 h-7 bg-black/70 rounded-full flex items-center justify-center text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
+          </div>
+
+          {!hasVideo && files.length > 0 && files.length < 10 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full border-gray-700 text-white hover:bg-gray-900"
+            >
+              + Adicionar mais fotos
+            </Button>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="video/*,image/*"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+
+          <div>
+            <label className="text-gray-400 text-xs uppercase tracking-wide mb-1 block">
+              Título *
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Descreve o teu vídeo/foto..."
+              required
+              className="w-full bg-gray-900 text-white rounded-lg px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-gray-600 text-sm"
+            />
           </div>
 
           <div>
             <label className="text-gray-400 text-xs uppercase tracking-wide mb-1 block">
-              Video URL *
-            </label>
-            <input
-              type="url"
-              value={form.videoUrl}
-              onChange={set("videoUrl")}
-              placeholder="https://..."
-              required
-              className="w-full bg-gray-900 text-white rounded-lg px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-gray-600 text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-gray-400 text-xs uppercase tracking-wide mb-1 block">
-              Thumbnail URL
-            </label>
-            <input
-              type="url"
-              value={form.thumbnailUrl}
-              onChange={set("thumbnailUrl")}
-              placeholder="https://..."
-              className="w-full bg-gray-900 text-white rounded-lg px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-gray-600 text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-gray-400 text-xs uppercase tracking-wide mb-1 block">
-              Title *
-            </label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={set("title")}
-              placeholder="Describe your video..."
-              required
-              className="w-full bg-gray-900 text-white rounded-lg px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-gray-600 text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-gray-400 text-xs uppercase tracking-wide mb-1 block">
-              Description
+              Descrição
             </label>
             <textarea
-              value={form.description}
-              onChange={set("description")}
-              placeholder="Add hashtags, mentions..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Adiciona hashtags, menções..."
               rows={3}
               className="w-full bg-gray-900 text-white rounded-lg px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-gray-600 text-sm resize-none"
             />
           </div>
+
           {error && <p className="text-[#FE2C55] text-sm">{error}</p>}
-          <button
+
+          <Button
             type="submit"
-            disabled={loading}
-            className="w-full bg-[#FE2C55] text-white font-bold py-3.5 rounded-lg disabled:opacity-60 text-base"
+            disabled={uploading || files.length === 0}
+            className="w-full bg-[#FE2C55] hover:bg-[#d92546] text-white py-6 text-base font-semibold disabled:opacity-50"
           >
-            {loading ? "Posting..." : "Post"}
-          </button>
+            {uploading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Upload className="w-5 h-5 animate-bounce" /> A carregar...
+              </span>
+            ) : (
+              "Publicar"
+            )}
+          </Button>
         </form>
       )}
 
