@@ -8,6 +8,8 @@ export interface User {
   followersCount?: number;
   followingCount?: number;
   videosCount?: number;
+  isPremium?: boolean;
+  isVerified?: boolean;
 }
 
 export interface Video {
@@ -27,6 +29,8 @@ export interface Video {
   liked: boolean;
   saved?: boolean;
   savedCount?: number;
+  isPremium?: boolean;
+  isVerified?: boolean;
 }
 
 export interface Comment {

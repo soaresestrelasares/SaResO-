@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getDb } from "../db.js";
-import { videos, users, likes, notifications, savedVideos } from "../schema.js";
+import { videos, users, likes, notifications, savedVideos, subscriptions, verifiedUsers } from "../schema.js";
 import { eq, desc, sql } from "drizzle-orm";
 import { authMiddleware, optionalAuth, AuthRequest } from "../middleware/auth.js";
 import { moderateContent } from "../middleware/moderation.js";
@@ -52,12 +52,26 @@ videosRouter.get("/", optionalAuth, async (req: AuthRequest, res) => {
     saved = new Set(userSaved.map((s) => Number(s.videoId)));
   }
 
+  // Batch badge info for all unique user IDs
+  const userIds = [...new Set(rows.map((r) => Number(r.userId)))];
+  const now = new Date();
+  const premiumSet = new Set<number>();
+  const verifiedSet = new Set<number>();
+  if (userIds.length > 0) {
+    const subs = await db.select().from(subscriptions).where(sql`user_id IN (${sql.raw(userIds.join(","))})`);
+    subs.forEach((s) => { if (s.active && new Date(s.expiresAt) > now) premiumSet.add(Number(s.userId)); });
+    const vfs = await db.select().from(verifiedUsers).where(sql`user_id IN (${sql.raw(userIds.join(","))})`);
+    vfs.forEach((v) => verifiedSet.add(Number(v.userId)));
+  }
+
   const result = rows.map((r) => ({
     ...r,
     id: Number(r.id),
     userId: Number(r.userId),
     liked: liked.has(Number(r.id)),
     saved: saved.has(Number(r.id)),
+    isPremium: premiumSet.has(Number(r.userId)),
+    isVerified: verifiedSet.has(Number(r.userId)),
   }));
   res.json(result);
 });

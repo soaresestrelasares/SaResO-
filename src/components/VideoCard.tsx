@@ -7,6 +7,7 @@ import { Link } from "@tanstack/react-router";
 import { CommentDrawer } from "./CommentDrawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { parseText } from "@/lib/parse-text";
+import { UserBadge } from "./UserBadge";
 
 interface VideoCardProps {
   video: Video;
@@ -205,7 +206,10 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
           params={{ username: video.username }}
           className="pointer-events-auto"
         >
-          <p className="text-white font-bold text-base mb-1">@{video.username}</p>
+          <p className="text-white font-bold text-base mb-1 flex items-center gap-1">
+            @{video.username}
+            <UserBadge isPremium={video.isPremium} isVerified={video.isVerified} />
+          </p>
         </Link>
         <p className="text-white text-sm mb-2 line-clamp-2 pointer-events-auto">
           {parseText(video.title)}

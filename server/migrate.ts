@@ -178,6 +178,25 @@ export async function ensureTables(): Promise<void> {
         UNIQUE KEY unique_save (user_id, video_id)
       )
     `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL UNIQUE,
+        plan VARCHAR(20) NOT NULL DEFAULT 'premium',
+        started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        active INT NOT NULL DEFAULT 1,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS verified_users (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL UNIQUE,
+        verified_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        verified_by INT NOT NULL
+      )
+    `);
     console.log("[sareso] All tables ready.");
   } finally {
     conn.release();

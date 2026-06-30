@@ -197,3 +197,20 @@ export const savedVideos = mysqlTable(
     uniqueSave: uniqueIndex("unique_save").on(table.userId, table.videoId),
   }),
 );
+
+export const subscriptions = mysqlTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: int("user_id").notNull().unique(),
+  plan: varchar("plan", { length: 20 }).default("premium").notNull(), // premium, vip
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  active: int("active").default(1).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const verifiedUsers = mysqlTable("verified_users", {
+  id: serial("id").primaryKey(),
+  userId: int("user_id").notNull().unique(),
+  verifiedAt: timestamp("verified_at").defaultNow().notNull(),
+  verifiedBy: int("verified_by").notNull(), // admin user id
+});

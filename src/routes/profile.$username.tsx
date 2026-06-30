@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Grid3X3, Heart, Settings, Bookmark } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { UserBadge } from "@/components/UserBadge";
 
 export const Route = createFileRoute("/profile/$username")({
   component: ProfilePage,
@@ -102,7 +103,10 @@ function ProfilePage() {
           </AvatarFallback>
         </Avatar>
 
-        <h2 className="text-xl font-bold">{profile.displayName}</h2>
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          {profile.displayName}
+          <UserBadge isPremium={profile.isPremium} isVerified={profile.isVerified} size="md" />
+        </h2>
         <p className="text-gray-400 text-sm mb-3">@{profile.username}</p>
 
         {/* Stats */}

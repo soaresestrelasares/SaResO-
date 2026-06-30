@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getDb } from "../db.js";
-import { users, follows, videos, blockedUsers } from "../schema.js";
+import { users, follows, videos, blockedUsers, subscriptions, verifiedUsers } from "../schema.js";
 import { eq, sql, count } from "drizzle-orm";
 import { authMiddleware, AuthRequest } from "../middleware/auth.js";
 import { moderateContent } from "../middleware/moderation.js";
@@ -31,6 +31,18 @@ usersRouter.get("/:username", async (req, res) => {
     .select({ count: sql<number>`count(*)` })
     .from(videos)
     .where(eq(videos.userId, user.id));
+  const [sub] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, user.id))
+    .limit(1);
+  const [verified] = await db
+    .select()
+    .from(verifiedUsers)
+    .where(eq(verifiedUsers.userId, user.id))
+    .limit(1);
+  const now = new Date();
+  const isPremium = !!(sub && sub.active && new Date(sub.expiresAt) > now);
   res.json({
     id: Number(user.id),
     username: user.username,
@@ -40,6 +52,8 @@ usersRouter.get("/:username", async (req, res) => {
     followersCount: Number(followersCount.count),
     followingCount: Number(followingCount.count),
     videosCount: Number(videosCount.count),
+    isPremium,
+    isVerified: !!verified,
   });
 });
 
