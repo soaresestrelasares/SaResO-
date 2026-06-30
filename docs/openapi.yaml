@@ -1,0 +1,36 @@
+openapi: 3.1.0
+info:
+  title: Fullstack Starter API
+  version: 2.1.0
+  description: Infrastructure API for the minimal fullstack starter.
+servers:
+  - url: /api
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Get application health
+      responses:
+        "200":
+          description: The API server is running.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthPayload"
+              example:
+                ok: true
+                service: fullstack-starter
+components:
+  schemas:
+    HealthPayload:
+      type: object
+      required:
+        - ok
+        - service
+      properties:
+        ok:
+          type: boolean
+          const: true
+        service:
+          type: string
+          const: fullstack-starter

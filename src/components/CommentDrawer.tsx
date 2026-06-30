@@ -1,0 +1,104 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { X, Send } from "lucide-react";
+
+interface Props {
+  videoId: number;
+  onClose: () => void;
+}
+
+export function CommentDrawer({ videoId, onClose }: Props) {
+  const [text, setText] = useState("");
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: comments = [] } = useQuery({
+    queryKey: ["comments", videoId],
+    queryFn: () => api.getComments(videoId),
+  });
+
+  const mutation = useMutation({
+    mutationFn: () => api.addComment(videoId, text),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", videoId] });
+      setText("");
+    },
+  });
+
+  const formatTime = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    if (diff < 60000) return "just now";
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return `${Math.floor(diff / 86400000)}d ago`;
+  };
+
+  return (
+    <div className="absolute inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
+      <div
+        className="bg-[#1a1a1a] rounded-t-2xl max-h-[70%] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <h2 className="text-white font-bold text-base">{comments.length} comments</h2>
+          <button onClick={onClose}>
+            <X className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {comments.length === 0 && (
+            <p className="text-gray-500 text-sm text-center py-8">No comments yet. Be the first!</p>
+          )}
+          {comments.map((c) => (
+            <div key={c.id} className="flex gap-3">
+              <Avatar className="w-8 h-8 flex-shrink-0">
+                <AvatarImage src={c.avatarUrl || undefined} />
+                <AvatarFallback className="bg-gray-700 text-white text-xs">
+                  {c.displayName.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-white font-semibold text-sm">@{c.username}</span>
+                  <span className="text-gray-500 text-xs">{formatTime(c.createdAt)}</span>
+                </div>
+                <p className="text-gray-200 text-sm mt-0.5">{c.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-4 border-t border-gray-700 flex items-center gap-3">
+          <Avatar className="w-8 h-8 flex-shrink-0">
+            <AvatarImage src={user?.avatarUrl || undefined} />
+            <AvatarFallback className="bg-gray-700 text-white text-xs">
+              {user?.displayName?.charAt(0) || "?"}
+            </AvatarFallback>
+          </Avatar>
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={user ? "Add comment..." : "Login to comment"}
+            disabled={!user}
+            className="flex-1 bg-gray-800 text-white rounded-full px-4 py-2 text-sm outline-none placeholder-gray-500"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && text.trim()) mutation.mutate();
+            }}
+          />
+          {text.trim() && (
+            <button onClick={() => mutation.mutate()} className="text-[#FE2C55]">
+              <Send className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

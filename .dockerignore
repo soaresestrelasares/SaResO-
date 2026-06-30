@@ -1,0 +1,17 @@
+node_modules
+dist
+dist-ssr
+.tanstack
+.git
+.gitignore
+.DS_Store
+.verdent
+coverage
+*.log
+*.local
+.env
+.env.*
+
+docs
+cover.jpeg
+template.json
