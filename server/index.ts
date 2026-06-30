@@ -7,7 +7,7 @@ import { ensureTables } from "./migrate.js";
 try {
   await ensureTables();
 } catch (err) {
-  console.error("[sareso] Failed to create tables:", err instanceof Error ? err.message : err);
+  console.error("[sareso] FATAL: Failed to create tables:", JSON.stringify(err));
   process.exit(1);
 }
 

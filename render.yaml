@@ -1,16 +1,17 @@
 services:
   - type: web
     name: sareso
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    plan: free
+    runtime: node
     region: frankfurt
+    plan: free
+    buildCommand: npm install -g pnpm && pnpm install && pnpm build
+    startCommand: node dist/server/index.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
     healthCheckPath: /api/health
     autoDeploy: true
