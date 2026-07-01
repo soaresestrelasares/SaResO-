@@ -16,6 +16,8 @@ export const users = mysqlTable("users", {
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   bio: varchar("bio", { length: 500 }).default(""),
   avatarUrl: varchar("avatar_url", { length: 500 }).default(""),
+  isPrivate: int("is_private").default(0).notNull(), // 0 = public, 1 = private
+  location: varchar("location", { length: 200 }).default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -26,6 +28,9 @@ export const videos = mysqlTable("videos", {
   description: varchar("description", { length: 2000 }).default(""),
   videoUrl: varchar("video_url", { length: 500 }).notNull(),
   thumbnailUrl: varchar("thumbnail_url", { length: 500 }).default(""),
+  location: varchar("location", { length: 200 }).default(""),
+  musicUrl: varchar("music_url", { length: 500 }).default(""),
+  musicTitle: varchar("music_title", { length: 200 }).default(""),
   likesCount: int("likes_count").default(0).notNull(),
   commentsCount: int("comments_count").default(0).notNull(),
   viewsCount: int("views_count").default(0).notNull(),
@@ -83,6 +88,10 @@ export const companies = mysqlTable("companies", {
   trialEndsAt: timestamp("trial_ends_at").defaultNow().notNull(),
   subscriptionEndsAt: timestamp("subscription_ends_at"),
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 100 }).default(""),
+  // Verificação legal da empresa
+  verificationStatus: varchar("verification_status", { length: 20 }).default("pending").notNull(), // pending, verified, rejected
+  legalDocUrl: varchar("legal_doc_url", { length: 500 }).default(""),
+  taxId: varchar("tax_id", { length: 100 }).default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -114,6 +123,82 @@ export const jobApplications = mysqlTable(
     uniqueApplication: uniqueIndex("unique_application").on(table.jobId, table.userId),
   }),
 );
+
+// Currículos de candidatos — empresas podem pesquisar potenciais funcionários
+export const resumes = mysqlTable("resumes", {
+  id: serial("id").primaryKey(),
+  userId: int("user_id").notNull().unique(),
+  summary: varchar("summary", { length: 2000 }).default(""),
+  skills: varchar("skills", { length: 2000 }).default(""), // vírgulas
+  experience: text("experience").default(""), // JSON simples
+  education: text("education").default(""), // JSON simples
+  desiredRole: varchar("desired_role", { length: 200 }).default(""),
+  desiredLocation: varchar("desired_location", { length: 200 }).default(""),
+  remote: int("remote").default(0).notNull(), // 0/1
+  cvUrl: varchar("cv_url", { length: 500 }).default(""),
+  isPublic: int("is_public").default(1).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Stories temporários (desaparecem após 24h)
+export const stories = mysqlTable("stories", {
+  id: serial("id").primaryKey(),
+  userId: int("user_id").notNull(),
+  mediaUrl: varchar("media_url", { length: 500 }).notNull(),
+  mediaType: varchar("media_type", { length: 10 }).default("image").notNull(), // image | video
+  location: varchar("location", { length: 200 }).default(""),
+  musicUrl: varchar("music_url", { length: 500 }).default(""),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+export const storyViews = mysqlTable(
+  "story_views",
+  {
+    id: serial("id").primaryKey(),
+    storyId: int("story_id").notNull(),
+    userId: int("user_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueView: uniqueIndex("unique_story_view").on(table.storyId, table.userId),
+  }),
+);
+
+export const videoViews = mysqlTable(
+  "video_views",
+  {
+    id: serial("id").primaryKey(),
+    videoId: int("video_id").notNull(),
+    userId: int("user_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueView: uniqueIndex("unique_video_view").on(table.videoId, table.userId),
+  }),
+);
+
+export const hashtags = mysqlTable(
+  "hashtags",
+  {
+    id: serial("id").primaryKey(),
+    tag: varchar("tag", { length: 100 }).notNull(),
+    videoId: int("video_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueTag: uniqueIndex("unique_hashtag_video").on(table.tag, table.videoId),
+  }),
+);
+
+export const videoReports = mysqlTable("video_reports", {
+  id: serial("id").primaryKey(),
+  videoId: int("video_id").notNull(),
+  reporterId: int("reporter_id").notNull(),
+  reason: varchar("reason", { length: 500 }).default(""),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
 export const conversations = mysqlTable(
   "conversations",

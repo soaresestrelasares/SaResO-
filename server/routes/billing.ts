@@ -150,12 +150,12 @@ billingRouter.post(
       const companyId = meta["companyId"] ? parseInt(meta["companyId"]) : null;
       const subId = typeof session.subscription === "string" ? session.subscription : null;
       const periodEnd = subId
-        ? (() => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return stripe.subscriptions
-              .retrieve(subId)
-              .then((s: any) => new Date(s.current_period_end * 1000));
-          })()
+        ? stripe.subscriptions.retrieve(subId).then((s) => {
+            const items = (s as unknown as { items?: { data?: { current_period_end?: number }[] } })
+              .items;
+            const ts = items?.data?.[0]?.current_period_end;
+            return ts ? new Date(ts * 1000) : null;
+          })
         : Promise.resolve(null);
       const resolvedPeriodEnd = await periodEnd;
       const now = new Date();

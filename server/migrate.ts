@@ -13,6 +13,8 @@ export async function ensureTables(): Promise<void> {
         password_hash VARCHAR(255) NOT NULL,
         bio VARCHAR(500) DEFAULT '',
         avatar_url VARCHAR(500) DEFAULT '',
+        is_private INT NOT NULL DEFAULT 0,
+        location VARCHAR(200) DEFAULT '',
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -24,6 +26,9 @@ export async function ensureTables(): Promise<void> {
         description VARCHAR(2000) DEFAULT '',
         video_url VARCHAR(500) NOT NULL,
         thumbnail_url VARCHAR(500) DEFAULT '',
+        location VARCHAR(200) DEFAULT '',
+        music_url VARCHAR(500) DEFAULT '',
+        music_title VARCHAR(200) DEFAULT '',
         likes_count INT DEFAULT 0 NOT NULL,
         comments_count INT DEFAULT 0 NOT NULL,
         views_count INT DEFAULT 0 NOT NULL,
@@ -72,6 +77,9 @@ export async function ensureTables(): Promise<void> {
         trial_ends_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         subscription_ends_at TIMESTAMP NULL,
         stripe_subscription_id VARCHAR(100) DEFAULT '',
+        verification_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+        legal_doc_url VARCHAR(500) DEFAULT '',
+        tax_id VARCHAR(100) DEFAULT '',
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -99,6 +107,71 @@ export async function ensureTables(): Promise<void> {
         status VARCHAR(20) DEFAULT 'pending',
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY unique_application (job_id, user_id)
+      )
+    `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS resumes (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL UNIQUE,
+        summary VARCHAR(2000) DEFAULT '',
+        skills VARCHAR(2000) DEFAULT '',
+        experience TEXT DEFAULT '',
+        education TEXT DEFAULT '',
+        desired_role VARCHAR(200) DEFAULT '',
+        desired_location VARCHAR(200) DEFAULT '',
+        remote INT NOT NULL DEFAULT 0,
+        cv_url VARCHAR(500) DEFAULT '',
+        is_public INT NOT NULL DEFAULT 1,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS stories (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        media_url VARCHAR(500) NOT NULL,
+        media_type VARCHAR(10) NOT NULL DEFAULT 'image',
+        location VARCHAR(200) DEFAULT '',
+        music_url VARCHAR(500) DEFAULT '',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL
+      )
+    `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS story_views (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        story_id INT NOT NULL,
+        user_id INT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_story_view (story_id, user_id)
+      )
+    `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS video_views (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        video_id INT NOT NULL,
+        user_id INT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_video_view (video_id, user_id)
+      )
+    `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS hashtags (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        tag VARCHAR(100) NOT NULL,
+        video_id INT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_hashtag_video (tag, video_id)
+      )
+    `);
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS video_reports (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        video_id INT NOT NULL,
+        reporter_id INT NOT NULL,
+        reason VARCHAR(500) DEFAULT '',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
     await conn.execute(`

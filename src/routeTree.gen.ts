@@ -12,14 +12,17 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as ResumeRouteImport } from './routes/resume'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as JobsRouteImport } from './routes/jobs'
+import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ResumesSearchRouteImport } from './routes/resumes.search'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
 import { Route as MessagesConversationIdRouteImport } from './routes/messages.$conversationId'
 import { Route as JobsPostRouteImport } from './routes/jobs.post'
@@ -40,6 +43,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResumeRoute = ResumeRouteImport.update({
+  id: '/resume',
+  path: '/resume',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -67,6 +75,11 @@ const JobsRoute = JobsRouteImport.update({
   path: '/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DiscoverRoute = DiscoverRouteImport.update({
+  id: '/discover',
+  path: '/discover',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BillingRoute = BillingRouteImport.update({
   id: '/billing',
   path: '/billing',
@@ -80,6 +93,11 @@ const AdminRoute = AdminRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResumesSearchRoute = ResumesSearchRouteImport.update({
+  id: '/resumes/search',
+  path: '/resumes/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
@@ -117,11 +135,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/billing': typeof BillingRoute
+  '/discover': typeof DiscoverRoute
   '/jobs': typeof JobsRouteWithChildren
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
+  '/resume': typeof ResumeRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
@@ -131,16 +151,19 @@ export interface FileRoutesByFullPath {
   '/jobs/post': typeof JobsPostRoute
   '/messages/$conversationId': typeof MessagesConversationIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/resumes/search': typeof ResumesSearchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/billing': typeof BillingRoute
+  '/discover': typeof DiscoverRoute
   '/jobs': typeof JobsRouteWithChildren
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
+  '/resume': typeof ResumeRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
@@ -150,17 +173,20 @@ export interface FileRoutesByTo {
   '/jobs/post': typeof JobsPostRoute
   '/messages/$conversationId': typeof MessagesConversationIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/resumes/search': typeof ResumesSearchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/billing': typeof BillingRoute
+  '/discover': typeof DiscoverRoute
   '/jobs': typeof JobsRouteWithChildren
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
+  '/resume': typeof ResumeRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
@@ -170,6 +196,7 @@ export interface FileRoutesById {
   '/jobs/post': typeof JobsPostRoute
   '/messages/$conversationId': typeof MessagesConversationIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/resumes/search': typeof ResumesSearchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -177,11 +204,13 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/billing'
+    | '/discover'
     | '/jobs'
     | '/login'
     | '/messages'
     | '/notifications'
     | '/register'
+    | '/resume'
     | '/search'
     | '/settings'
     | '/upload'
@@ -191,16 +220,19 @@ export interface FileRouteTypes {
     | '/jobs/post'
     | '/messages/$conversationId'
     | '/profile/$username'
+    | '/resumes/search'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/billing'
+    | '/discover'
     | '/jobs'
     | '/login'
     | '/messages'
     | '/notifications'
     | '/register'
+    | '/resume'
     | '/search'
     | '/settings'
     | '/upload'
@@ -210,16 +242,19 @@ export interface FileRouteTypes {
     | '/jobs/post'
     | '/messages/$conversationId'
     | '/profile/$username'
+    | '/resumes/search'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/billing'
+    | '/discover'
     | '/jobs'
     | '/login'
     | '/messages'
     | '/notifications'
     | '/register'
+    | '/resume'
     | '/search'
     | '/settings'
     | '/upload'
@@ -229,23 +264,27 @@ export interface FileRouteTypes {
     | '/jobs/post'
     | '/messages/$conversationId'
     | '/profile/$username'
+    | '/resumes/search'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   BillingRoute: typeof BillingRoute
+  DiscoverRoute: typeof DiscoverRoute
   JobsRoute: typeof JobsRouteWithChildren
   LoginRoute: typeof LoginRoute
   MessagesRoute: typeof MessagesRouteWithChildren
   NotificationsRoute: typeof NotificationsRoute
   RegisterRoute: typeof RegisterRoute
+  ResumeRoute: typeof ResumeRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   UploadRoute: typeof UploadRoute
   CompanyIdRoute: typeof CompanyIdRoute
   CompanyNewRoute: typeof CompanyNewRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
+  ResumesSearchRoute: typeof ResumesSearchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -269,6 +308,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resume': {
+      id: '/resume'
+      path: '/resume'
+      fullPath: '/resume'
+      preLoaderRoute: typeof ResumeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -306,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JobsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/discover': {
+      id: '/discover'
+      path: '/discover'
+      fullPath: '/discover'
+      preLoaderRoute: typeof DiscoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/billing': {
       id: '/billing'
       path: '/billing'
@@ -325,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resumes/search': {
+      id: '/resumes/search'
+      path: '/resumes/search'
+      fullPath: '/resumes/search'
+      preLoaderRoute: typeof ResumesSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile/$username': {
@@ -400,17 +460,20 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   BillingRoute: BillingRoute,
+  DiscoverRoute: DiscoverRoute,
   JobsRoute: JobsRouteWithChildren,
   LoginRoute: LoginRoute,
   MessagesRoute: MessagesRouteWithChildren,
   NotificationsRoute: NotificationsRoute,
   RegisterRoute: RegisterRoute,
+  ResumeRoute: ResumeRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   UploadRoute: UploadRoute,
   CompanyIdRoute: CompanyIdRoute,
   CompanyNewRoute: CompanyNewRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
+  ResumesSearchRoute: ResumesSearchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

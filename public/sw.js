@@ -8,9 +8,9 @@ self.addEventListener("install", (e) => {
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))),
   );
   self.clients.claim();
 });
@@ -25,6 +25,6 @@ self.addEventListener("fetch", (e) => {
         caches.open(CACHE).then((c) => c.put(e.request, clone));
         return res;
       })
-      .catch(() => caches.match(e.request))
+      .catch(() => caches.match(e.request)),
   );
 });

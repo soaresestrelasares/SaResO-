@@ -9,6 +9,8 @@ import type {
   Conversation,
   Message,
   Notification,
+  Story,
+  Resume,
 } from "./api-types";
 
 const BASE = "/api";
@@ -59,6 +61,9 @@ export const api = {
     description: string;
     videoUrl: string;
     thumbnailUrl: string;
+    location?: string;
+    musicUrl?: string;
+    musicTitle?: string;
   }) => request<{ id: number }>("/videos", { method: "POST", body: JSON.stringify(data) }),
   likeVideo: (id: number) => request<{ liked: boolean }>(`/videos/${id}/like`, { method: "POST" }),
   saveVideo: (id: number) => request<{ saved: boolean }>(`/videos/${id}/save`, { method: "POST" }),
@@ -93,6 +98,11 @@ export const api = {
   // Companies
   createCompany: (data: Partial<Company>) =>
     request<{ id: number; name: string; status: string; trialDays: number }>("/companies", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  verifyCompany: (id: number, data: { legalDocUrl?: string; taxId?: string }) =>
+    request<{ ok: boolean; status: string }>(`/companies/${id}/verify`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -156,7 +166,19 @@ export const api = {
     request<{ userCount: number; videoCount: number; reportCount: number; pendingReports: number }>(
       "/admin/stats",
     ),
-  getAdminReports: () => request<any[]>("/admin/reports"),
+  getAdminReports: () =>
+    request<
+      {
+        id: number;
+        reporterId: number;
+        reporterUsername: string;
+        contentType: string;
+        contentId: number;
+        reason: string;
+        resolved: boolean;
+        createdAt: string;
+      }[]
+    >("/admin/reports"),
   resolveReport: (id: number) =>
     request<{ ok: boolean }>(`/admin/reports/${id}/resolve`, { method: "PATCH" }),
 
@@ -177,6 +199,44 @@ export const api = {
         subscribedAt: string;
       }[]
     >(`/creators/${creatorId}/subscribers`),
+
+  getStories: () => request<Story[]>("/discover/stories"),
+  getUserStories: (userId: number) => request<Story[]>(`/discover/stories/user/${userId}`),
+  createStory: (data: { mediaUrl: string; mediaType: "image" | "video" }) =>
+    request<{ id: number }>("/discover/stories", { method: "POST", body: JSON.stringify(data) }),
+  viewStory: (storyId: number) =>
+    request<{ ok: boolean }>(`/discover/stories/${storyId}/view`, { method: "POST" }),
+  getSuggestions: () =>
+    request<
+      {
+        id: number;
+        username: string;
+        displayName: string;
+        avatarUrl: string | null;
+        bio: string | null;
+      }[]
+    >("/discover/suggestions"),
+  getTrending: (page = 0) => request<Video[]>(`/discover/trending?page=${page}`),
+  getHashtagVideos: (tag: string, page = 0) =>
+    request<Video[]>(`/discover/hashtag/${tag}?page=${page}`),
+  searchHashtags: (q: string) =>
+    request<{ tag: string; count: number }[]>(
+      `/discover/hashtags/search?q=${encodeURIComponent(q)}`,
+    ),
+  getFollowingFeed: (page = 0) => request<Video[]>(`/discover/feed/following?page=${page}`),
+
+  // Resumes / CVs
+  getMyResume: () => request<Resume>("/resumes/me"),
+  updateResume: (data: Partial<Resume>) =>
+    request<Resume>("/resumes/me", { method: "PUT", body: JSON.stringify(data) }),
+  searchResumes: (params?: { q?: string; location?: string; remote?: boolean; page?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.q) q.set("q", params.q);
+    if (params?.location) q.set("location", params.location);
+    if (params?.remote !== undefined) q.set("remote", String(params.remote));
+    if (params?.page !== undefined) q.set("page", String(params.page));
+    return request<Resume[]>(`/resumes?${q}`);
+  },
 
   // Billing / Stripe
   createCheckout: (plan: string, creatorId?: number, companyId?: number) =>

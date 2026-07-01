@@ -80,21 +80,25 @@ subscribersRouter.get("/:creatorId/subscribers", authMiddleware, async (req: Aut
 });
 
 // GET /api/creators/:creatorId/subscribe-status — verificar se está subscrito
-subscribersRouter.get("/:creatorId/subscribe-status", authMiddleware, async (req: AuthRequest, res) => {
-  const db = getDb();
-  const subscriberId = req.userId!;
-  const creatorId = parseInt(req.params["creatorId"] as string);
+subscribersRouter.get(
+  "/:creatorId/subscribe-status",
+  authMiddleware,
+  async (req: AuthRequest, res) => {
+    const db = getDb();
+    const subscriberId = req.userId!;
+    const creatorId = parseInt(req.params["creatorId"] as string);
 
-  const [existing] = await db
-    .select()
-    .from(creatorSubscribers)
-    .where(sql`subscriber_id = ${subscriberId} AND creator_id = ${creatorId}`)
-    .limit(1);
+    const [existing] = await db
+      .select()
+      .from(creatorSubscribers)
+      .where(sql`subscriber_id = ${subscriberId} AND creator_id = ${creatorId}`)
+      .limit(1);
 
-  const [countRow] = await db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(creatorSubscribers)
-    .where(eq(creatorSubscribers.creatorId, creatorId));
+    const [countRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(creatorSubscribers)
+      .where(eq(creatorSubscribers.creatorId, creatorId));
 
-  res.json({ subscribed: !!existing, subscribersCount: Number(countRow?.count ?? 0) });
-});
+    res.json({ subscribed: !!existing, subscribersCount: Number(countRow?.count ?? 0) });
+  },
+);

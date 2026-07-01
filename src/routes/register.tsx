@@ -20,7 +20,8 @@ function RegisterPage() {
     if (!form.displayName.trim()) e.displayName = "Insere o teu nome";
     if (!form.username.trim()) e.username = "Insere um username";
     else if (form.username.length < 3) e.username = "Mínimo 3 caracteres";
-    else if (!/^[a-z0-9_.]+$/.test(form.username)) e.username = "Só letras minúsculas, números, _ e .";
+    else if (!/^[a-z0-9_.]+$/.test(form.username))
+      e.username = "Só letras minúsculas, números, _ e .";
     if (!form.email.trim()) e.email = "Insere o teu email";
     if (!form.password) e.password = "Insere uma password";
     else if (form.password.length < 6) e.password = "Mínimo 6 caracteres";
@@ -30,7 +31,10 @@ function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
     setLoading(true);
     setErrors({});
     try {
@@ -52,12 +56,7 @@ function RegisterPage() {
     setErrors((prev) => ({ ...prev, [field]: "", general: "" }));
   };
 
-  const field = (
-    name: keyof typeof form,
-    placeholder: string,
-    type = "text",
-    hint?: string,
-  ) => (
+  const field = (name: keyof typeof form, placeholder: string, type = "text", hint?: string) => (
     <div className="space-y-1">
       <input
         type={type}

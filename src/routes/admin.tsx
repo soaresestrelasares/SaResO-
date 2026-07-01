@@ -61,8 +61,8 @@ function AdminPage() {
     );
   }
 
-  const pendingReports = reports.filter((r: any) => !r.resolved);
-  const resolvedReports = reports.filter((r: any) => r.resolved);
+  const pendingReports = reports.filter((r) => !r.resolved);
+  const resolvedReports = reports.filter((r) => r.resolved);
 
   return (
     <div className="min-h-screen bg-[#0A0F1E] text-white max-w-[480px] mx-auto pb-8">
@@ -134,7 +134,7 @@ function AdminPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {pendingReports.map((report: any) => (
+              {pendingReports.map((report) => (
                 <div
                   key={report.id}
                   className="bg-[#111827] rounded-2xl p-4 border border-red-500/20"
@@ -176,7 +176,7 @@ function AdminPage() {
               Denúncias Resolvidas ({resolvedReports.length})
             </h2>
             <div className="space-y-2">
-              {resolvedReports.slice(0, 5).map((report: any) => (
+              {resolvedReports.slice(0, 5).map((report) => (
                 <div
                   key={report.id}
                   className="bg-[#111827] rounded-xl p-3 border border-gray-800 opacity-60"

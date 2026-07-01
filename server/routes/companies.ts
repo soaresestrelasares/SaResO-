@@ -23,6 +23,9 @@ function normalizeCompany(row: typeof companies.$inferSelect) {
     subscriptionStatus: row.subscriptionStatus,
     subscriptionPlan: row.subscriptionPlan,
     stripeSubscriptionId: row.stripeSubscriptionId,
+    verificationStatus: row.verificationStatus,
+    legalDocUrl: row.legalDocUrl,
+    taxId: row.taxId,
   };
 }
 
@@ -40,9 +43,13 @@ function companyIsActive(row: typeof companies.$inferSelect) {
 // Create company
 companiesRouter.post("/", authMiddleware, moderateContent, async (req: AuthRequest, res) => {
   const db = getDb();
-  const { name, logoUrl, description, website, industry, location } = req.body;
+  const { name, logoUrl, description, website, industry, location, taxId, legalDocUrl } = req.body;
   if (!name) {
     res.status(400).json({ error: "Nome da empresa obrigatório" });
+    return;
+  }
+  if (!taxId) {
+    res.status(400).json({ error: "NIF/NIPC obrigatório para verificação legal." });
     return;
   }
   const now = new Date();
@@ -54,6 +61,8 @@ companiesRouter.post("/", authMiddleware, moderateContent, async (req: AuthReque
     website: website || "",
     industry: industry || "",
     location: location || "",
+    taxId,
+    legalDocUrl: legalDocUrl || "",
     subscriptionStatus: "trial",
     trialEndsAt: addDays(now, TRIAL_DAYS),
   });
@@ -97,12 +106,55 @@ companiesRouter.patch("/:id", authMiddleware, moderateContent, async (req: AuthR
     res.status(403).json({ error: "Sem permissão" });
     return;
   }
-  const { name, logoUrl, description, website, industry, location } = req.body;
+  const { name, logoUrl, description, website, industry, location, taxId, legalDocUrl } = req.body;
   await db
     .update(companies)
-    .set({ name, logoUrl, description, website, industry, location })
+    .set({ name, logoUrl, description, website, industry, location, taxId, legalDocUrl })
     .where(eq(companies.id, id));
   res.json({ ok: true });
+});
+
+// POST /:id/verify — submeter documentos legais para verificação
+companiesRouter.post("/:id/verify", authMiddleware, async (req: AuthRequest, res) => {
+  const db = getDb();
+  const id = parseInt(req.params.id as string);
+  const [company] = await db.select().from(companies).where(eq(companies.id, id)).limit(1);
+  if (!company || Number(company.ownerId) !== req.userId!) {
+    res.status(403).json({ error: "Sem permissão" });
+    return;
+  }
+  const { legalDocUrl, taxId } = req.body;
+  await db
+    .update(companies)
+    .set({
+      legalDocUrl: legalDocUrl || company.legalDocUrl,
+      taxId: taxId || company.taxId,
+      verificationStatus: "pending",
+    })
+    .where(eq(companies.id, id));
+  res.json({ ok: true, status: "pending" });
+});
+
+// Admin: aprovar/rejeitar empresa
+companiesRouter.patch("/:id/verification", authMiddleware, async (req: AuthRequest, res) => {
+  const db = getDb();
+  const id = parseInt(req.params.id as string);
+  const { status } = req.body; // 'verified' | 'rejected'
+  if (!["verified", "rejected"].includes(status)) {
+    res.status(400).json({ error: "Status inválido" });
+    return;
+  }
+  const [company] = await db.select().from(companies).where(eq(companies.id, id)).limit(1);
+  if (!company || Number(company.ownerId) !== req.userId!) {
+    // Admin verification: only hardcoded admin can do this
+    const [admin] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
+    if (admin?.username !== "soaresestrelasares") {
+      res.status(403).json({ error: "Sem permissão" });
+      return;
+    }
+  }
+  await db.update(companies).set({ verificationStatus: status }).where(eq(companies.id, id));
+  res.json({ ok: true, status });
 });
 
 // Public helper: check if company can post jobs

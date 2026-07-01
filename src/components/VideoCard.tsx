@@ -16,6 +16,8 @@ interface VideoCardProps {
 
 export function VideoCard({ video, isActive }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const lastTapRef = useRef<number>(0);
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [liked, setLiked] = useState(video.liked);
   const [likesCount, setLikesCount] = useState(video.likesCount);
   const [saved, setSaved] = useState(video.saved ?? false);
@@ -23,6 +25,7 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
   const [shareToast, setShareToast] = useState("");
+  const [showHeart, setShowHeart] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -35,8 +38,46 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
     }
   }, [isActive, paused]);
 
+  const triggerLike = async () => {
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+    if (liked) return;
+    setLiked(true);
+    setLikesCount((c) => c + 1);
+    setShowHeart(true);
+    setTimeout(() => setShowHeart(false), 800);
+    try {
+      await api.likeVideo(video.id);
+    } catch {
+      setLiked(false);
+      setLikesCount((c) => c - 1);
+    }
+  };
+
   const togglePlay = () => {
     setPaused((p) => !p);
+  };
+
+  const handleTap = () => {
+    const now = Date.now();
+    const timeDiff = now - lastTapRef.current;
+    lastTapRef.current = now;
+
+    if (tapTimerRef.current) {
+      clearTimeout(tapTimerRef.current);
+      tapTimerRef.current = null;
+    }
+
+    if (timeDiff < 300) {
+      // Double tap
+      triggerLike();
+    } else {
+      tapTimerRef.current = setTimeout(() => {
+        togglePlay();
+      }, 300);
+    }
   };
 
   const handleLike = async () => {
@@ -110,9 +151,16 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
         loop
         muted={muted}
         playsInline
-        onClick={togglePlay}
+        onClick={handleTap}
         poster={video.thumbnailUrl || undefined}
       />
+
+      {/* Double-tap heart animation */}
+      {showHeart && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          <Heart className="w-28 h-28 text-[#FE2C55] animate-ping" fill="#FE2C55" />
+        </div>
+      )}
 
       {/* Pause overlay */}
       {paused && (
@@ -172,19 +220,15 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
 
         {/* Bookmark */}
         <button onClick={handleSave} className="flex flex-col items-center gap-1">
-          <div className={`p-2 rounded-full ${saved ? "text-green-400" : "text-white"}`}>
-            <BookmarkIcon
-              className="w-7 h-7"
-              fill={saved ? "currentColor" : "none"}
-              strokeWidth={1.5}
-            />
+          <div className={`p-2 rounded-full ${saved ? "text-orange-500" : "text-white"}`}>
+            <BookmarkIcon className="w-7 h-7" fill={saved ? "#F97316" : "none"} strokeWidth={1.5} />
           </div>
           <span className="text-white text-xs font-semibold">{saved ? "Guardado" : "Guardar"}</span>
         </button>
 
         {/* Share */}
         <button onClick={handleShare} className="flex flex-col items-center gap-1">
-          <div className="p-2 rounded-full text-blue-400">
+          <div className="p-2 rounded-full text-[#25F4EE]">
             <Share2 className="w-7 h-7" strokeWidth={1.5} />
           </div>
           <span className="text-white text-xs font-semibold">Partilhar</span>

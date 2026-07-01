@@ -14,7 +14,12 @@ export function parseText(text: string): React.ReactNode[] {
     if (part.startsWith("@")) {
       const username = part.slice(1);
       return (
-        <Link key={i} to="/profile/$username" params={{ username }} className="text-[#25F4EE] hover:underline">
+        <Link
+          key={i}
+          to="/profile/$username"
+          params={{ username }}
+          className="text-[#25F4EE] hover:underline"
+        >
           {part}
         </Link>
       );

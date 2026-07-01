@@ -1,3 +1,14 @@
+export interface Story {
+  id: number;
+  userId: number;
+  mediaUrl: string;
+  mediaType: "image" | "video";
+  createdAt: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
 export interface User {
   id: number;
   username: string;
@@ -5,12 +16,16 @@ export interface User {
   email: string;
   bio: string | null;
   avatarUrl: string | null;
+  location?: string | null;
+  isPrivate?: boolean;
   followersCount?: number;
   followingCount?: number;
   videosCount?: number;
   subscribersCount?: number;
   isPremium?: boolean;
   isVerified?: boolean;
+  canViewContent?: boolean;
+  isFollowing?: boolean;
 }
 
 export interface Video {
@@ -20,6 +35,9 @@ export interface Video {
   description: string | null;
   videoUrl: string;
   thumbnailUrl: string | null;
+  location: string | null;
+  musicUrl: string | null;
+  musicTitle: string | null;
   likesCount: number;
   commentsCount: number;
   viewsCount: number;
@@ -64,6 +82,9 @@ export interface Company {
   trialEndsAt: string;
   subscriptionEndsAt: string | null;
   stripeSubscriptionId: string | null;
+  verificationStatus: "pending" | "verified" | "rejected";
+  legalDocUrl: string | null;
+  taxId: string | null;
   isActive: boolean;
   createdAt: string;
   jobs?: Job[];
@@ -98,6 +119,43 @@ export interface JobApplication {
   displayName: string;
   avatarUrl: string | null;
   bio: string | null;
+}
+
+export interface Resume {
+  id: number;
+  userId: number;
+  summary: string | null;
+  skills: string[];
+  experience: ResumeExperience[];
+  education: ResumeEducation[];
+  desiredRole: string | null;
+  desiredLocation: string | null;
+  remote: boolean;
+  cvUrl: string | null;
+  isPublic: boolean;
+  updatedAt: string;
+  username?: string;
+  displayName?: string;
+  avatarUrl?: string | null;
+  location?: string | null;
+}
+
+export interface ResumeExperience {
+  role: string;
+  company: string;
+  location?: string;
+  start: string;
+  end?: string;
+  current?: boolean;
+  description?: string;
+}
+
+export interface ResumeEducation {
+  institution: string;
+  degree: string;
+  field?: string;
+  start: string;
+  end?: string;
 }
 
 export interface Conversation {

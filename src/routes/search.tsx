@@ -73,12 +73,8 @@ function SearchPage() {
 
       {keyword ? (
         <div className="px-4">
-          <h2 className="text-base font-bold mb-3">
-            Results for &ldquo;{q}&rdquo;
-          </h2>
-          {isLoading && (
-            <p className="text-gray-500 text-sm text-center py-8">Searching...</p>
-          )}
+          <h2 className="text-base font-bold mb-3">Results for &ldquo;{q}&rdquo;</h2>
+          {isLoading && <p className="text-gray-500 text-sm text-center py-8">Searching...</p>}
           {!isLoading && videos.length === 0 && (
             <p className="text-gray-500 text-sm text-center py-8">No videos found.</p>
           )}
@@ -90,11 +86,7 @@ function SearchPage() {
                 className="relative aspect-[9/16] bg-gray-900 rounded-xl overflow-hidden block"
               >
                 {v.thumbnailUrl ? (
-                  <img
-                    src={v.thumbnailUrl}
-                    alt={v.title}
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={v.thumbnailUrl} alt={v.title} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <span className="text-gray-600 text-xs text-center px-2">{v.title}</span>

@@ -23,7 +23,8 @@ function BillingPage() {
     mutationFn: (plan: string) => api.createCheckout(plan),
     onSuccess: (data) => {
       if (data.url) window.location.href = data.url;
-      else if (data.demo) alert("Pagamentos em modo de demonstração — Stripe não está configurado ainda.");
+      else if (data.demo)
+        alert("Pagamentos em modo de demonstração — Stripe não está configurado ainda.");
     },
   });
 
@@ -31,7 +32,10 @@ function BillingPage() {
     return (
       <div className="min-h-screen bg-[#0A0F1E] flex flex-col items-center justify-center text-white p-6">
         <p className="mb-4">Precisas de ter sessão iniciada.</p>
-        <button onClick={() => navigate({ to: "/login" })} className="bg-blue-600 px-6 py-2 rounded-xl">
+        <button
+          onClick={() => navigate({ to: "/login" })}
+          className="bg-blue-600 px-6 py-2 rounded-xl"
+        >
           Entrar
         </button>
       </div>
@@ -42,7 +46,10 @@ function BillingPage() {
     <div className="min-h-screen bg-[#0A0F1E] text-white pb-20">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-gray-800">
-        <button onClick={() => navigate({ to: "/settings" })} className="text-gray-400 hover:text-white">
+        <button
+          onClick={() => navigate({ to: "/settings" })}
+          className="text-gray-400 hover:text-white"
+        >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-lg font-bold">Planos SaResO</h1>
@@ -76,7 +83,8 @@ function BillingPage() {
           </ul>
           {status?.isPremiumCreator ? (
             <div className="w-full bg-orange-900/40 border border-orange-500 rounded-xl py-3 text-center text-orange-400 font-semibold text-sm">
-              ✓ Plano ativo até {status.expiresAt ? new Date(status.expiresAt).toLocaleDateString("pt-PT") : "—"}
+              ✓ Plano ativo até{" "}
+              {status.expiresAt ? new Date(status.expiresAt).toLocaleDateString("pt-PT") : "—"}
             </div>
           ) : (
             <button

@@ -4,7 +4,18 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { BottomNav } from "@/components/BottomNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Grid3X3, Heart, Settings, Bookmark } from "lucide-react";
+import {
+  ArrowLeft,
+  Grid3X3,
+  Heart,
+  Settings,
+  Bookmark,
+  Lock,
+  MapPin,
+  Globe,
+  Briefcase,
+  FileText,
+} from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { UserBadge } from "@/components/UserBadge";
@@ -29,7 +40,7 @@ function ProfilePage() {
   const { data: userVideos = [] } = useQuery({
     queryKey: ["userVideos", profile?.id],
     queryFn: () => api.getUserVideos(profile!.id),
-    enabled: !!profile?.id,
+    enabled: !!profile?.id && profile?.canViewContent !== false,
   });
 
   const { data: savedVideos = [] } = useQuery({
@@ -52,14 +63,18 @@ function ProfilePage() {
 
   const followMutation = useMutation({
     mutationFn: () => api.toggleFollow(profile!.id),
-    onSuccess: () => refetchFollow(),
+    onSuccess: () => {
+      refetchFollow();
+      queryClient.invalidateQueries({ queryKey: ["user", username] });
+    },
   });
 
   const subscribeMutation = useMutation({
     mutationFn: () => api.createCheckout("creator_subscriber", profile!.id),
     onSuccess: (data) => {
       if (data.url) window.location.href = data.url;
-      else if (data.demo) alert("Subscrição gratuita (Stripe não configurado): a subscrever diretamente.");
+      else if (data.demo)
+        alert("Subscrição gratuita (Stripe não configurado): a subscrever diretamente.");
     },
   });
 
@@ -91,11 +106,13 @@ function ProfilePage() {
     );
   }
 
+  const isPrivateVisible = profile.isPrivate && !profile.canViewContent;
+
   return (
     <div className="min-h-screen bg-black text-white max-w-[480px] mx-auto pb-20">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
-        <button onClick={() => navigate({ to: "/" })}>
+        <button onClick={() => navigate({ to: "/" })} style={{ color: "white" }}>
           <ArrowLeft className="w-6 h-6" />
         </button>
         <h1 className="font-bold text-base">@{profile.username}</h1>
@@ -123,14 +140,24 @@ function ProfilePage() {
         </h2>
         <p className="text-gray-400 text-sm mb-3">@{profile.username}</p>
 
+        {profile.location && (
+          <p className="text-gray-400 text-xs flex items-center gap-1 mb-2">
+            <MapPin className="w-3 h-3" /> {profile.location}
+          </p>
+        )}
+
         {/* Stats */}
         <div className="flex gap-6 mb-4 flex-wrap justify-center">
           <div className="text-center">
-            <p className="text-white font-bold text-lg">{formatCount(profile.followingCount ?? 0)}</p>
+            <p className="text-white font-bold text-lg">
+              {formatCount(profile.followingCount ?? 0)}
+            </p>
             <p className="text-gray-400 text-xs">A seguir</p>
           </div>
           <div className="text-center">
-            <p className="text-white font-bold text-lg">{formatCount(profile.followersCount ?? 0)}</p>
+            <p className="text-white font-bold text-lg">
+              {formatCount(profile.followersCount ?? 0)}
+            </p>
             <p className="text-gray-400 text-xs">Seguidores</p>
           </div>
           <div className="text-center">
@@ -149,21 +176,44 @@ function ProfilePage() {
 
         {profile.bio && <p className="text-gray-300 text-sm text-center mb-4">{profile.bio}</p>}
 
+        {isPrivateVisible && (
+          <div className="flex items-center gap-2 text-gray-400 text-sm mb-4">
+            <Lock className="w-4 h-4" />
+            <span>Esta conta é privada. Segue para ver o conteúdo.</span>
+          </div>
+        )}
+
         {/* Action buttons */}
         {isMe ? (
-          <div className="flex gap-3 w-full max-w-xs">
-            <Link
-              to="/upload"
-              className="flex-1 border border-gray-600 text-white font-semibold py-2.5 rounded-xl text-center text-sm"
-            >
-              Publicar vídeo
-            </Link>
-            <Link
-              to="/settings"
-              className="flex-1 border border-gray-600 text-white font-semibold py-2.5 rounded-xl text-center text-sm"
-            >
-              Editar perfil
-            </Link>
+          <div className="flex flex-col gap-2 w-full max-w-xs">
+            <div className="flex gap-3">
+              <Link
+                to="/upload"
+                className="flex-1 border border-gray-600 text-white font-semibold py-2.5 rounded-xl text-center text-sm"
+              >
+                Publicar vídeo
+              </Link>
+              <Link
+                to="/settings"
+                className="flex-1 border border-gray-600 text-white font-semibold py-2.5 rounded-xl text-center text-sm"
+              >
+                Editar perfil
+              </Link>
+            </div>
+            <div className="flex gap-3">
+              <Link
+                to="/resume"
+                className="flex-1 border border-gray-600 text-white font-semibold py-2.5 rounded-xl text-center text-sm flex items-center justify-center gap-1"
+              >
+                <FileText className="w-4 h-4" /> Currículo
+              </Link>
+              <Link
+                to="/jobs"
+                className="flex-1 border border-gray-600 text-white font-semibold py-2.5 rounded-xl text-center text-sm flex items-center justify-center gap-1"
+              >
+                <Briefcase className="w-4 h-4" /> Empregos
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-2 w-full max-w-xs">
@@ -172,7 +222,11 @@ function ProfilePage() {
                 onClick={() => (user ? followMutation.mutate() : navigate({ to: "/login" }))}
                 disabled={followMutation.isPending}
                 className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-colors ${followStatus?.following ? "border border-gray-600 text-white" : "text-white"}`}
-                style={followStatus?.following ? {} : { background: "linear-gradient(135deg,#1E90FF,#0047AB)" }}
+                style={
+                  followStatus?.following
+                    ? {}
+                    : { background: "linear-gradient(135deg,#22C55E,#16A34A)" }
+                }
               >
                 {followStatus?.following ? "A seguir" : "Seguir"}
               </button>
@@ -210,17 +264,28 @@ function ProfilePage() {
           >
             <Grid3X3 className="w-5 h-5" />
           </button>
-          <button
-            onClick={() => setActiveTab("saved")}
-            className={`flex-1 flex items-center justify-center py-3 ${activeTab === "saved" ? "border-b-2 border-white" : "text-gray-500"}`}
-          >
-            <Bookmark className="w-5 h-5" />
-          </button>
+          {isMe && (
+            <button
+              onClick={() => setActiveTab("saved")}
+              className={`flex-1 flex items-center justify-center py-3 ${activeTab === "saved" ? "border-b-2 border-white" : "text-gray-500"}`}
+            >
+              <Bookmark className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {activeTab === "videos" && (
           <>
-            {userVideos.length === 0 ? (
+            {isPrivateVisible ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-500 px-6 text-center">
+                <Lock className="w-12 h-12 mb-3 opacity-30" />
+                <p className="text-sm">
+                  Conteúdo privado.
+                  <br />
+                  Segue @{profile.username} para ver os vídeos.
+                </p>
+              </div>
+            ) : userVideos.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-500">
                 <Grid3X3 className="w-12 h-12 mb-3 opacity-30" />
                 <p className="text-sm">Sem vídeos ainda</p>
@@ -230,7 +295,11 @@ function ProfilePage() {
                 {userVideos.map((v) => (
                   <div key={v.id} className="aspect-[9/16] bg-gray-900 relative overflow-hidden">
                     {v.thumbnailUrl ? (
-                      <img src={v.thumbnailUrl} alt={v.title} className="w-full h-full object-cover" />
+                      <img
+                        src={v.thumbnailUrl}
+                        alt={v.title}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <video src={v.videoUrl} className="w-full h-full object-cover" muted />
                     )}
@@ -257,7 +326,11 @@ function ProfilePage() {
                 {savedVideos.map((v) => (
                   <div key={v.id} className="aspect-[9/16] bg-gray-900 relative overflow-hidden">
                     {v.thumbnailUrl ? (
-                      <img src={v.thumbnailUrl} alt={v.title} className="w-full h-full object-cover" />
+                      <img
+                        src={v.thumbnailUrl}
+                        alt={v.title}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <video src={v.videoUrl} className="w-full h-full object-cover" muted />
                     )}

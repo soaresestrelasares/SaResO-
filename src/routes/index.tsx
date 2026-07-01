@@ -5,7 +5,8 @@ import { api } from "@/lib/api";
 import { VideoCard } from "@/components/VideoCard";
 import { BottomNav } from "@/components/BottomNav";
 import { SaResoLogoIcon } from "@/components/SaResoLogo";
-import type { Video } from "@/lib/api-types";
+import { StoryBar, StoryViewer } from "@/components/StoryBar";
+import type { Video, Story } from "@/lib/api-types";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -15,6 +16,10 @@ function Home() {
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<"following" | "for-you">("for-you");
+  const [viewingStories, setViewingStories] = useState<{
+    stories: Story[];
+    startIndex: number;
+  } | null>(null);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ["feed"],
@@ -77,6 +82,9 @@ function Home() {
         className="flex-1 overflow-y-scroll snap-y snap-mandatory"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
+        <StoryBar
+          onOpenStory={(stories, startIndex) => setViewingStories({ stories, startIndex })}
+        />
         {videos.length === 0 && (
           <div className="h-screen flex flex-col items-center justify-center text-white gap-4">
             <p className="text-gray-400 text-center">
@@ -99,6 +107,13 @@ function Home() {
       </div>
 
       <BottomNav />
+      {viewingStories && (
+        <StoryViewer
+          stories={viewingStories.stories}
+          startIndex={viewingStories.startIndex}
+          onClose={() => setViewingStories(null)}
+        />
+      )}
     </div>
   );
 }

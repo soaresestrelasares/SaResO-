@@ -135,8 +135,7 @@ conversationsRouter.post(
       .where(eq(conversations.id, convId));
     // Trigger message notification to the other participant
     try {
-      const otherId =
-        Number(conv.user1Id) === userId ? Number(conv.user2Id) : Number(conv.user1Id);
+      const otherId = Number(conv.user1Id) === userId ? Number(conv.user2Id) : Number(conv.user1Id);
       await db.insert(notifications).values({
         userId: otherId,
         actorId: userId,

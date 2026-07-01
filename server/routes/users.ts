@@ -1,24 +1,36 @@
 import { Router } from "express";
 import { getDb } from "../db.js";
-import { users, follows, videos, blockedUsers, subscriptions, verifiedUsers, creatorSubscribers } from "../schema.js";
-import { eq, sql, count } from "drizzle-orm";
-import { authMiddleware, AuthRequest } from "../middleware/auth.js";
+import {
+  users,
+  follows,
+  videos,
+  blockedUsers,
+  subscriptions,
+  verifiedUsers,
+  creatorSubscribers,
+} from "../schema.js";
+import { eq, sql } from "drizzle-orm";
+import { authMiddleware, optionalAuthQuery, AuthRequest } from "../middleware/auth.js";
 import { moderateContent } from "../middleware/moderation.js";
 import { onlineUsers } from "../socket.js";
 
 export const usersRouter = Router();
 
-usersRouter.get("/:username", async (req, res) => {
+usersRouter.get("/:username", optionalAuthQuery, async (req: AuthRequest, res) => {
   const db = getDb();
   const [user] = await db
     .select()
     .from(users)
-    .where(eq(users.username, req.params.username))
+    .where(sql`username = ${req.params.username}`)
     .limit(1);
   if (!user) {
     res.status(404).json({ error: "User not found" });
     return;
   }
+  const viewerId = req.userId;
+  const targetId = Number(user.id);
+  const isMe = viewerId === targetId;
+
   const [followersCount] = await db
     .select({ count: sql<number>`count(*)` })
     .from(follows)
@@ -47,28 +59,53 @@ usersRouter.get("/:username", async (req, res) => {
     .where(eq(creatorSubscribers.creatorId, user.id));
   const now = new Date();
   const isPremium = !!(sub && sub.active && new Date(sub.expiresAt) > now);
+  const isVerified = !!verified;
+  const isPrivate = user.isPrivate === 1;
+
+  // Premium e verificados são obrigatoriamente públicos
+  const forcePublic = isPremium || isVerified;
+
+  // Se privado, só mostra conteúdo se for o próprio ou já seguir
+  let isFollowing = false;
+  if (viewerId && !isMe) {
+    const [f] = await db
+      .select()
+      .from(follows)
+      .where(sql`follower_id = ${viewerId} AND following_id = ${targetId}`)
+      .limit(1);
+    isFollowing = !!f;
+  }
+
+  const canViewContent = isMe || forcePublic || !isPrivate || isFollowing;
+
   res.json({
-    id: Number(user.id),
+    id: targetId,
     username: user.username,
     displayName: user.displayName,
     bio: user.bio,
     avatarUrl: user.avatarUrl,
+    location: user.location,
+    isPrivate: isPrivate && !forcePublic,
     followersCount: Number(followersCount.count),
     followingCount: Number(followingCount.count),
     videosCount: Number(videosCount.count),
     subscribersCount: Number(subCount?.count ?? 0),
     isPremium,
-    isVerified: !!verified,
+    isVerified,
+    canViewContent,
+    isFollowing,
   });
 });
 
 usersRouter.patch("/me", authMiddleware, moderateContent, async (req: AuthRequest, res) => {
   const db = getDb();
-  const { displayName, bio, avatarUrl, username } = req.body;
-  const updateData: Record<string, string> = {};
+  const { displayName, bio, avatarUrl, username, isPrivate, location } = req.body;
+  const updateData: Record<string, string | number> = {};
   if (displayName !== undefined) updateData.displayName = displayName;
   if (bio !== undefined) updateData.bio = bio;
   if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
+  if (location !== undefined) updateData.location = location;
+  if (isPrivate !== undefined) updateData.isPrivate = isPrivate ? 1 : 0;
   if (username !== undefined) {
     if (username.length < 3 || username.length > 50) {
       res.status(400).json({ error: "O username deve ter entre 3 e 50 caracteres." });
@@ -78,11 +115,7 @@ usersRouter.patch("/me", authMiddleware, moderateContent, async (req: AuthReques
       res.status(400).json({ error: "O username só pode ter letras minúsculas, números, _ e ." });
       return;
     }
-    const [existing] = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, username))
-      .limit(1);
+    const [existing] = await db.select().from(users).where(eq(users.username, username)).limit(1);
     if (existing && Number(existing.id) !== req.userId!) {
       res.status(409).json({ error: "Este username já está ocupado." });
       return;
@@ -99,6 +132,8 @@ usersRouter.patch("/me", authMiddleware, moderateContent, async (req: AuthReques
     displayName: user.displayName,
     bio: user.bio,
     avatarUrl: user.avatarUrl,
+    location: user.location,
+    isPrivate: user.isPrivate === 1,
   });
 });
 
@@ -139,9 +174,7 @@ usersRouter.delete("/block/:userId", authMiddleware, async (req: AuthRequest, re
   const db = getDb();
   const blockerId = req.userId!;
   const blockedId = parseInt(req.params.userId as string);
-  await db
-    .delete(blockedUsers)
-    .where(sql`blocker_id = ${blockerId} AND blocked_id = ${blockedId}`);
+  await db.delete(blockedUsers).where(sql`blocker_id = ${blockerId} AND blocked_id = ${blockedId}`);
   res.json({ ok: true });
 });
 

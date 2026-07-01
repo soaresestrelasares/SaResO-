@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { BottomNav } from "@/components/BottomNav";
-import { ArrowLeft, Building2 } from "lucide-react";
+import { ArrowLeft, Building2, FileCheck } from "lucide-react";
 
 export const Route = createFileRoute("/company/new")({
   component: NewCompanyPage,
@@ -34,6 +34,8 @@ function NewCompanyPage() {
     website: "",
     industry: "",
     location: "",
+    taxId: "",
+    legalDocUrl: "",
   });
   const [error, setError] = useState("");
 
@@ -58,7 +60,7 @@ function NewCompanyPage() {
   return (
     <div className="min-h-screen bg-black text-white max-w-[480px] mx-auto pb-24">
       <div className="flex items-center gap-3 p-4 border-b border-gray-800">
-        <button onClick={() => navigate({ to: "/jobs" })}>
+        <button onClick={() => navigate({ to: "/jobs" })} style={{ color: "white" }}>
           <ArrowLeft className="w-6 h-6" />
         </button>
         <h1 className="font-bold">Criar Empresa</h1>
@@ -85,6 +87,34 @@ function NewCompanyPage() {
             placeholder="Nome da empresa"
             className="w-full bg-gray-900 text-white rounded-xl px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-600 text-sm"
           />
+        </div>
+        <div>
+          <label className="text-gray-400 text-xs uppercase tracking-wide mb-1 block">
+            NIF / NIPC *
+          </label>
+          <input
+            type="text"
+            value={form.taxId}
+            onChange={set("taxId")}
+            placeholder="Número de identificação fiscal da empresa"
+            className="w-full bg-gray-900 text-white rounded-xl px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-600 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-gray-400 text-xs uppercase tracking-wide mb-1 block flex items-center gap-1">
+            <FileCheck className="w-3 h-3" /> Documento legal (certidão permanente, registo
+            comercial)
+          </label>
+          <input
+            type="url"
+            value={form.legalDocUrl}
+            onChange={set("legalDocUrl")}
+            placeholder="https://... (PDF ou imagem do documento)"
+            className="w-full bg-gray-900 text-white rounded-xl px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-600 text-sm"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            A empresa só será verificada após revisão dos documentos pela equipa SaResO.
+          </p>
         </div>
         <div>
           <label className="text-gray-400 text-xs uppercase tracking-wide mb-1 block">
@@ -157,7 +187,7 @@ function NewCompanyPage() {
         )}
         <button
           onClick={() => mutation.mutate()}
-          disabled={mutation.isPending || !form.name}
+          disabled={mutation.isPending || !form.name || !form.taxId}
           className="w-full py-3.5 rounded-xl font-bold text-white disabled:opacity-60"
           style={{ background: "linear-gradient(135deg,#1E90FF,#0047AB)" }}
         >

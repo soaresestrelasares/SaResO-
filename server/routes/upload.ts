@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { v2 as cloudinary } from "cloudinary";
@@ -7,10 +7,15 @@ import { isCloudinaryReady } from "../cloudinary.js";
 
 export const uploadRouter = Router();
 
+// Custom type for Cloudinary file result (eager thumbnail added by multer-storage-cloudinary)
+interface CloudinaryMulterFile extends Express.Multer.File {
+  eager?: { secure_url: string }[];
+}
+
 // Configure multer storage for Cloudinary
 const storage = new CloudinaryStorage({
-  cloudinary: cloudinary as any,
-  params: (req: any, file: Express.Multer.File) => {
+  cloudinary,
+  params: (_req: Request, file: Express.Multer.File) => {
     const isVideo = file.mimetype.startsWith("video/");
     return {
       folder: isVideo ? "sareso/videos" : "sareso/images",
@@ -20,7 +25,7 @@ const storage = new CloudinaryStorage({
         : ["jpg", "jpeg", "png", "webp", "gif"],
       // Auto-generate thumbnail for videos
       eager: isVideo ? [{ width: 640, height: 360, crop: "pad", format: "jpg" }] : undefined,
-    } as any;
+    };
   },
 });
 
@@ -40,33 +45,38 @@ const upload = multer({
   },
 });
 
-uploadRouter.post("/", authMiddleware, upload.array("files"), async (req: AuthRequest, res) => {
-  if (!isCloudinaryReady()) {
-    res.status(503).json({ error: "Upload não configurado." });
-    return;
-  }
+uploadRouter.post(
+  "/",
+  authMiddleware,
+  upload.array("files"),
+  async (req: AuthRequest, res: Response) => {
+    if (!isCloudinaryReady()) {
+      res.status(503).json({ error: "Upload não configurado." });
+      return;
+    }
 
-  const files = req.files as Express.Multer.File[] | undefined;
-  if (!files || files.length === 0) {
-    res.status(400).json({ error: "Nenhum ficheiro enviado." });
-    return;
-  }
+    const files = req.files as CloudinaryMulterFile[] | undefined;
+    if (!files || files.length === 0) {
+      res.status(400).json({ error: "Nenhum ficheiro enviado." });
+      return;
+    }
 
-  const results = files.map((file) => ({
-    url: file.path,
-    publicId: file.filename,
-    resourceType: file.mimetype.startsWith("video/") ? "video" : "image",
-    thumbnailUrl:
-      file.mimetype.startsWith("video/") && (file as any).eager?.[0]?.secure_url
-        ? (file as any).eager[0].secure_url
-        : file.path,
-  }));
+    const results = files.map((file) => ({
+      url: file.path,
+      publicId: file.filename,
+      resourceType: file.mimetype.startsWith("video/") ? "video" : "image",
+      thumbnailUrl:
+        file.mimetype.startsWith("video/") && file.eager?.[0]?.secure_url
+          ? file.eager[0].secure_url
+          : file.path,
+    }));
 
-  res.json({ files: results });
-});
+    res.json({ files: results });
+  },
+);
 
 // Error handler for multer errors
-uploadRouter.use((err: any, _req: any, res: any, _next: any) => {
+uploadRouter.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error("[upload] error:", err);
   if (err instanceof multer.MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") {

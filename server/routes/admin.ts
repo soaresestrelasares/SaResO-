@@ -1,3 +1,4 @@
+import type { Response } from "express";
 import { Router } from "express";
 import { getDb } from "../db.js";
 import { users, videos, reports, verifiedUsers, subscriptions } from "../schema.js";
@@ -8,7 +9,7 @@ export const adminRouter = Router();
 
 const ADMIN_USERNAME = "soaresestrelasares";
 
-async function requireAdmin(req: AuthRequest, res: any): Promise<boolean> {
+async function requireAdmin(req: AuthRequest, res: Response): Promise<boolean> {
   const db = getDb();
   const [user] = await db
     .select({ username: users.username })
@@ -84,7 +85,10 @@ adminRouter.post("/verify/:userId", authMiddleware, async (req: AuthRequest, res
   if (!(await requireAdmin(req, res))) return;
   const db = getDb();
   const targetId = parseInt(req.params["userId"] as string);
-  await db.insert(verifiedUsers).values({ userId: targetId, verifiedBy: req.userId! }).onDuplicateKeyUpdate({ set: { verifiedAt: sql`NOW()` } });
+  await db
+    .insert(verifiedUsers)
+    .values({ userId: targetId, verifiedBy: req.userId! })
+    .onDuplicateKeyUpdate({ set: { verifiedAt: sql`NOW()` } });
   res.json({ ok: true });
 });
 
@@ -104,7 +108,10 @@ adminRouter.post("/premium/:userId", authMiddleware, async (req: AuthRequest, re
   const targetId = parseInt(req.params["userId"] as string);
   const days = parseInt(req.body.days as string) || 30;
   const expiresAt = new Date(Date.now() + days * 86400000);
-  await db.insert(subscriptions).values({ userId: targetId, expiresAt, active: 1 }).onDuplicateKeyUpdate({ set: { expiresAt, active: 1 } });
+  await db
+    .insert(subscriptions)
+    .values({ userId: targetId, expiresAt, active: 1 })
+    .onDuplicateKeyUpdate({ set: { expiresAt, active: 1 } });
   res.json({ ok: true, expiresAt });
 });
 

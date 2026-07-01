@@ -16,6 +16,8 @@ function SettingsPage() {
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
   const [username, setUsername] = useState(user?.username ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
+  const [location, setLocation] = useState(user?.location ?? "");
+  const [isPrivate, setIsPrivate] = useState(user?.isPrivate ?? false);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -44,7 +46,13 @@ function SettingsPage() {
     setProfileError("");
     setProfileSuccess("");
     try {
-      const updated = await api.updateProfile({ displayName, bio, username });
+      const updated = await api.updateProfile({
+        displayName,
+        bio,
+        username,
+        location,
+        isPrivate,
+      });
       // Update auth context with new user data
       if (token) {
         login(token, { ...user, ...updated });
@@ -99,7 +107,11 @@ function SettingsPage() {
     <div className="min-h-screen bg-[#0A0F1E] text-white max-w-[480px] mx-auto pb-24">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-gray-800">
-        <button onClick={() => navigate({ to: "/profile/$username", params: { username: user.username } })}>
+        <button
+          onClick={() =>
+            navigate({ to: "/profile/$username", params: { username: user.username } })
+          }
+        >
           <ArrowLeft className="w-6 h-6 text-gray-400" />
         </button>
         <h1 className="text-xl font-bold">Definições</h1>
@@ -146,6 +158,36 @@ function SettingsPage() {
                 className="w-full bg-[#111827] text-white rounded-xl px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-500 transition-colors text-sm resize-none"
               />
               <p className="text-xs text-gray-600 mt-1 text-right">{bio.length}/500</p>
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-400 mb-1.5">Localização</label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Ex: Lisboa, Portugal"
+                maxLength={200}
+                className="w-full bg-[#111827] text-white rounded-xl px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-500 transition-colors text-sm"
+              />
+            </div>
+
+            <div className="flex items-center justify-between bg-[#111827] rounded-xl px-4 py-3 border border-gray-800">
+              <div>
+                <p className="text-sm text-white">Conta privada</p>
+                <p className="text-xs text-gray-500">
+                  Contas Premium e Verificadas são sempre públicas.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPrivate((v) => !v)}
+                className={`w-12 h-7 rounded-full transition-colors relative ${isPrivate ? "bg-blue-500" : "bg-gray-600"}`}
+              >
+                <span
+                  className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${isPrivate ? "left-6" : "left-1"}`}
+                />
+              </button>
             </div>
 
             {profileError && (

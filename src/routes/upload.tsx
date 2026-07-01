@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { BottomNav } from "@/components/BottomNav";
-import { ArrowLeft, Upload, Video, Image, X, Check } from "lucide-react";
+import { ArrowLeft, Upload, Video, Image, X, Check, MapPin, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -24,6 +24,9 @@ function UploadPage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [musicUrl, setMusicUrl] = useState("");
+  const [musicTitle, setMusicTitle] = useState("");
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -123,12 +126,15 @@ function UploadPage() {
     setUploading(true);
     setError("");
     try {
-      const { videoUrl, thumbnailUrl, imageUrls } = await uploadFiles();
+      const { videoUrl, thumbnailUrl } = await uploadFiles();
       await api.createVideo({
         title,
         description,
         videoUrl: videoUrl || "",
         thumbnailUrl: thumbnailUrl || "",
+        location,
+        musicUrl,
+        musicTitle,
       });
       setSuccess(true);
       setTimeout(() => navigate({ to: "/" }), 2000);
@@ -268,6 +274,39 @@ function UploadPage() {
               placeholder="Adiciona hashtags, menções..."
               rows={3}
               className="w-full bg-gray-900 text-white rounded-lg px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-gray-600 text-sm resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-gray-400 text-xs uppercase tracking-wide mb-1 block flex items-center gap-1">
+              <MapPin className="w-3 h-3" /> Localização
+            </label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Ex: Lisboa, Portugal"
+              className="w-full bg-gray-900 text-white rounded-lg px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-gray-600 text-sm"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-gray-400 text-xs uppercase tracking-wide mb-1 block flex items-center gap-1">
+              <Music className="w-3 h-3" /> Música
+            </label>
+            <input
+              type="text"
+              value={musicTitle}
+              onChange={(e) => setMusicTitle(e.target.value)}
+              placeholder="Título da música"
+              className="w-full bg-gray-900 text-white rounded-lg px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-gray-600 text-sm"
+            />
+            <input
+              type="url"
+              value={musicUrl}
+              onChange={(e) => setMusicUrl(e.target.value)}
+              placeholder="Link do ficheiro de música (opcional)"
+              className="w-full bg-gray-900 text-white rounded-lg px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-gray-600 text-sm"
             />
           </div>
 

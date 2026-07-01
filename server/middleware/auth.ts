@@ -35,6 +35,21 @@ export function optionalAuth(req: AuthRequest, res: Response, next: NextFunction
   next();
 }
 
+export function optionalAuthQuery(req: AuthRequest, res: Response, next: NextFunction) {
+  const header = req.headers.authorization?.replace("Bearer ", "");
+  const query = req.query.token as string | undefined;
+  const token = header || query;
+  if (token) {
+    try {
+      const payload = jwt.verify(token, JWT_SECRET) as { userId: number };
+      req.userId = payload.userId;
+    } catch {
+      // no-op
+    }
+  }
+  next();
+}
+
 export function signToken(userId: number): string {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
 }

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Briefcase, MessageCircle, Plus, User } from "lucide-react";
+import { Home, Briefcase, MessageCircle, Plus, User, Compass } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export function BottomNav() {
@@ -9,6 +9,7 @@ export function BottomNav() {
 
   const staticItems = [
     { to: "/" as const, icon: Home, label: "Feed" },
+    { to: "/discover" as const, icon: Compass, label: "Discover" },
     { to: "/jobs" as const, icon: Briefcase, label: "Emprego" },
     { to: "/upload" as const, icon: Plus, label: "", special: true },
     { to: "/messages" as const, icon: MessageCircle, label: "Chat" },
@@ -45,13 +46,17 @@ export function BottomNav() {
           );
         }
         return (
-          <Link key={item.to} to={item.to} className="flex flex-col items-center gap-0.5 py-1">
+          <Link
+            key={item.to}
+            to={item.to}
+            className="flex flex-col items-center gap-0.5 py-1 min-w-[48px]"
+          >
             <item.icon
-              className={`w-6 h-6 ${active ? "text-blue-400" : "text-gray-500"}`}
+              className={`w-5 h-5 ${active ? "text-blue-400" : "text-gray-500"}`}
               strokeWidth={active ? 2.5 : 1.5}
             />
             <span
-              className={`text-[10px] ${active ? "text-blue-400 font-semibold" : "text-gray-500"}`}
+              className={`text-[9px] ${active ? "text-blue-400 font-semibold" : "text-gray-500"}`}
             >
               {item.label}
             </span>

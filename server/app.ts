@@ -20,6 +20,8 @@ import { adminRouter } from "./routes/admin.js";
 import { subscribersRouter } from "./routes/subscribers.js";
 import { billingRouter } from "./routes/billing.js";
 import { uploadRouter } from "./routes/upload.js";
+import { discoverRouter } from "./routes/discover.js";
+import { resumesRouter } from "./routes/resumes.js";
 import { ensureTables } from "./migrate.js";
 
 const authLimiter = rateLimit({
@@ -71,7 +73,9 @@ export function createApp() {
   app.use("/api/users", usersRouter);
   app.use("/api/seed", seedRouter);
   app.use("/api/upload", uploadRouter);
+  app.use("/api/discover", discoverRouter);
   app.use("/api/companies", companiesRouter);
+  app.use("/api/resumes", resumesRouter);
   app.use("/api/jobs", jobsRouter);
   app.use("/api/conversations", conversationsRouter);
   app.use("/api/reports", reportsRouter);

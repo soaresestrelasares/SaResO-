@@ -36,7 +36,11 @@ authRouter.post("/register", async (req, res) => {
       return;
     }
 
-    const existingUsername = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    const existingUsername = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username))
+      .limit(1);
     if (existingUsername.length > 0) {
       res.status(409).json({ error: "Este username já está ocupado. Escolhe outro." });
       return;
@@ -48,7 +52,16 @@ authRouter.post("/register", async (req, res) => {
 
     res.json({
       token,
-      user: { id: Number(result.insertId), username, displayName, email, bio: "", avatarUrl: "" },
+      user: {
+        id: Number(result.insertId),
+        username,
+        displayName,
+        email,
+        bio: "",
+        avatarUrl: "",
+        location: "",
+        isPrivate: false,
+      },
     });
   } catch {
     res.status(500).json({ error: "Erro ao criar conta. Tenta novamente." });
@@ -85,6 +98,8 @@ authRouter.post("/login", async (req, res) => {
         email: user.email,
         bio: user.bio ?? "",
         avatarUrl: user.avatarUrl ?? "",
+        location: user.location ?? "",
+        isPrivate: user.isPrivate === 1,
       },
     });
   } catch {
@@ -107,6 +122,8 @@ authRouter.get("/me", authMiddleware, async (req: AuthRequest, res) => {
       email: user.email,
       bio: user.bio ?? "",
       avatarUrl: user.avatarUrl ?? "",
+      location: user.location ?? "",
+      isPrivate: user.isPrivate === 1,
     });
   } catch {
     res.status(500).json({ error: "Erro ao carregar perfil." });

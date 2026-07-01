@@ -1,11 +1,40 @@
 import { Router } from "express";
 import { getDb } from "../db.js";
-import { videos, users, likes, notifications, savedVideos, subscriptions, verifiedUsers } from "../schema.js";
+import {
+  videos,
+  users,
+  likes,
+  notifications,
+  savedVideos,
+  subscriptions,
+  verifiedUsers,
+} from "../schema.js";
 import { eq, desc, sql } from "drizzle-orm";
 import { authMiddleware, optionalAuth, AuthRequest } from "../middleware/auth.js";
 import { moderateContent } from "../middleware/moderation.js";
 
 export const videosRouter = Router();
+
+function videoSelectFields() {
+  return {
+    id: videos.id,
+    userId: videos.userId,
+    title: videos.title,
+    description: videos.description,
+    videoUrl: videos.videoUrl,
+    thumbnailUrl: videos.thumbnailUrl,
+    location: videos.location,
+    musicUrl: videos.musicUrl,
+    musicTitle: videos.musicTitle,
+    likesCount: videos.likesCount,
+    commentsCount: videos.commentsCount,
+    viewsCount: videos.viewsCount,
+    createdAt: videos.createdAt,
+    username: users.username,
+    displayName: users.displayName,
+    avatarUrl: users.avatarUrl,
+  };
+}
 
 // Get feed (all videos sorted by newest)
 videosRouter.get("/", optionalAuth, async (req: AuthRequest, res) => {
@@ -13,21 +42,7 @@ videosRouter.get("/", optionalAuth, async (req: AuthRequest, res) => {
   const page = parseInt(req.query.page as string) || 0;
   const limit = 10;
   const rows = await db
-    .select({
-      id: videos.id,
-      userId: videos.userId,
-      title: videos.title,
-      description: videos.description,
-      videoUrl: videos.videoUrl,
-      thumbnailUrl: videos.thumbnailUrl,
-      likesCount: videos.likesCount,
-      commentsCount: videos.commentsCount,
-      viewsCount: videos.viewsCount,
-      createdAt: videos.createdAt,
-      username: users.username,
-      displayName: users.displayName,
-      avatarUrl: users.avatarUrl,
-    })
+    .select(videoSelectFields())
     .from(videos)
     .innerJoin(users, eq(videos.userId, users.id))
     .orderBy(desc(videos.createdAt))
@@ -58,9 +73,17 @@ videosRouter.get("/", optionalAuth, async (req: AuthRequest, res) => {
   const premiumSet = new Set<number>();
   const verifiedSet = new Set<number>();
   if (userIds.length > 0) {
-    const subs = await db.select().from(subscriptions).where(sql`user_id IN (${sql.raw(userIds.join(","))})`);
-    subs.forEach((s) => { if (s.active && new Date(s.expiresAt) > now) premiumSet.add(Number(s.userId)); });
-    const vfs = await db.select().from(verifiedUsers).where(sql`user_id IN (${sql.raw(userIds.join(","))})`);
+    const subs = await db
+      .select()
+      .from(subscriptions)
+      .where(sql`user_id IN (${sql.raw(userIds.join(","))})`);
+    subs.forEach((s) => {
+      if (s.active && new Date(s.expiresAt) > now) premiumSet.add(Number(s.userId));
+    });
+    const vfs = await db
+      .select()
+      .from(verifiedUsers)
+      .where(sql`user_id IN (${sql.raw(userIds.join(","))})`);
     vfs.forEach((v) => verifiedSet.add(Number(v.userId)));
   }
 
@@ -79,7 +102,7 @@ videosRouter.get("/", optionalAuth, async (req: AuthRequest, res) => {
 // Create video
 videosRouter.post("/", authMiddleware, moderateContent, async (req: AuthRequest, res) => {
   const db = getDb();
-  const { title, description, videoUrl, thumbnailUrl } = req.body;
+  const { title, description, videoUrl, thumbnailUrl, location, musicUrl, musicTitle } = req.body;
   if (!title || !videoUrl) {
     res.status(400).json({ error: "title and videoUrl required" });
     return;
@@ -90,6 +113,9 @@ videosRouter.post("/", authMiddleware, moderateContent, async (req: AuthRequest,
     description: description || "",
     videoUrl,
     thumbnailUrl: thumbnailUrl || "",
+    location: location || "",
+    musicUrl: musicUrl || "",
+    musicTitle: musicTitle || "",
   });
   res.json({ id: Number(result.insertId), title, videoUrl });
 });
@@ -99,21 +125,7 @@ videosRouter.get("/saved", authMiddleware, async (req: AuthRequest, res) => {
   const db = getDb();
   const userId = req.userId!;
   const rows = await db
-    .select({
-      id: videos.id,
-      userId: videos.userId,
-      title: videos.title,
-      description: videos.description,
-      videoUrl: videos.videoUrl,
-      thumbnailUrl: videos.thumbnailUrl,
-      likesCount: videos.likesCount,
-      commentsCount: videos.commentsCount,
-      viewsCount: videos.viewsCount,
-      createdAt: videos.createdAt,
-      username: users.username,
-      displayName: users.displayName,
-      avatarUrl: users.avatarUrl,
-    })
+    .select(videoSelectFields())
     .from(savedVideos)
     .innerJoin(videos, eq(savedVideos.videoId, videos.id))
     .innerJoin(users, eq(videos.userId, users.id))
@@ -142,21 +154,7 @@ videosRouter.get("/:id", optionalAuth, async (req: AuthRequest, res) => {
   const db = getDb();
   const id = parseInt(req.params.id as string);
   const [row] = await db
-    .select({
-      id: videos.id,
-      userId: videos.userId,
-      title: videos.title,
-      description: videos.description,
-      videoUrl: videos.videoUrl,
-      thumbnailUrl: videos.thumbnailUrl,
-      likesCount: videos.likesCount,
-      commentsCount: videos.commentsCount,
-      viewsCount: videos.viewsCount,
-      createdAt: videos.createdAt,
-      username: users.username,
-      displayName: users.displayName,
-      avatarUrl: users.avatarUrl,
-    })
+    .select(videoSelectFields())
     .from(videos)
     .innerJoin(users, eq(videos.userId, users.id))
     .where(eq(videos.id, id))
