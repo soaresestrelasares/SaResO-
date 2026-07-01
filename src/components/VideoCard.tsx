@@ -1,11 +1,12 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Heart, MessageCircle, Share2, Music, BookmarkIcon } from "lucide-react";
+import { Heart, MessageCircle, Share2, Music, BookmarkIcon, Flag } from "lucide-react";
 import type { Video } from "@/lib/api-types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Link } from "@tanstack/react-router";
 import { CommentDrawer } from "./CommentDrawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { parseText } from "@/lib/parse-text";
 import { UserBadge } from "./UserBadge";
 
@@ -24,9 +25,32 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportSent, setReportSent] = useState(false);
+
   const [shareToast, setShareToast] = useState("");
   const [showHeart, setShowHeart] = useState(false);
   const { user } = useAuth();
+
+  const handleReport = async () => {
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+    if (!reportReason.trim()) return;
+    try {
+      await api.reportContent("video", video.id, reportReason);
+      setReportSent(true);
+      setTimeout(() => {
+        setShowReport(false);
+        setReportReason("");
+        setReportSent(false);
+      }, 2000);
+    } catch {
+      setReportSent(false);
+    }
+  };
 
   useEffect(() => {
     const v = videoRef.current;
@@ -234,6 +258,14 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
           <span className="text-white text-xs font-semibold">Partilhar</span>
         </button>
 
+        {/* Report */}
+        <button onClick={() => setShowReport(true)} className="flex flex-col items-center gap-1">
+          <div className="p-2 rounded-full text-gray-300">
+            <Flag className="w-6 h-6" strokeWidth={1.5} />
+          </div>
+          <span className="text-white text-xs font-semibold">Denunciar</span>
+        </button>
+
         {/* Music disc */}
         <div
           className="w-10 h-10 bg-gray-800 rounded-full border-2 border-white flex items-center justify-center animate-spin"
@@ -287,6 +319,44 @@ export function VideoCard({ video, isActive }: VideoCardProps) {
 
       {/* Comments drawer */}
       {showComments && <CommentDrawer videoId={video.id} onClose={() => setShowComments(false)} />}
+
+      {/* Report modal */}
+      {showReport && (
+        <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center p-6">
+          <div className="bg-gray-900 rounded-2xl p-5 w-full max-w-sm space-y-4 border border-gray-700">
+            <h3 className="text-white font-bold text-lg">Denunciar vídeo</h3>
+            {reportSent ? (
+              <p className="text-green-400 text-sm">Denúncia enviada. Obrigado.</p>
+            ) : (
+              <>
+                <textarea
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  placeholder="Qual é o motivo da denúncia?"
+                  rows={3}
+                  className="w-full bg-black text-white rounded-xl px-3 py-2 text-sm outline-none placeholder-gray-500 border border-gray-800"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleReport}
+                    disabled={!reportReason.trim()}
+                    className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                  >
+                    Enviar
+                  </Button>
+                  <Button
+                    onClick={() => setShowReport(false)}
+                    variant="outline"
+                    className="flex-1 border-gray-600 text-white hover:bg-gray-800"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

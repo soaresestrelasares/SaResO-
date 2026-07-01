@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { BottomNav } from "@/components/BottomNav";
 
 export const Route = createFileRoute("/company/$id")({
   component: RouteComponent,
@@ -76,7 +77,7 @@ function RouteComponent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white text-slate-900 flex items-center justify-center">
         A carregar...
       </div>
     );
@@ -84,7 +85,7 @@ function RouteComponent() {
 
   if (!company) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white text-slate-900 flex items-center justify-center">
         Empresa não encontrada
       </div>
     );
@@ -93,27 +94,27 @@ function RouteComponent() {
   const statusConfig = {
     trial: {
       label: "Período experimental",
-      color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/40",
+      color: "bg-yellow-100 text-yellow-700 border-yellow-300",
     },
     active: {
       label: "Subscrição ativa",
-      color: "bg-green-500/20 text-green-300 border-green-500/40",
+      color: "bg-green-100 text-green-700 border-green-300",
     },
     expired: {
       label: "Subscrição expirada",
-      color: "bg-red-500/20 text-red-300 border-red-500/40",
+      color: "bg-red-100 text-red-700 border-red-300",
     },
   };
 
   const cfg = statusConfig[company.subscriptionStatus];
 
   return (
-    <div className="min-h-screen bg-black text-white pb-24">
+    <div className="min-h-screen bg-white text-slate-900 pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-black/90 border-b border-gray-800 px-4 py-3 flex items-center gap-3">
+      <div className="sticky top-0 z-30 bg-white/90 border-b border-slate-200 px-4 py-3 flex items-center gap-3">
         <button
           onClick={() => navigate({ to: "/jobs" })}
-          className="p-2 -ml-2 hover:bg-gray-900 rounded-full"
+          className="p-2 -ml-2 hover:bg-slate-100 rounded-full"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -122,9 +123,9 @@ function RouteComponent() {
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
         {/* Card principal */}
-        <Card className="bg-gray-900 border-gray-800 p-5 space-y-4">
+        <Card className="bg-slate-50 border-slate-200 p-5 space-y-4">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center text-2xl font-black shrink-0">
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center text-2xl font-black text-white shrink-0">
               {company.logoUrl ? (
                 <img
                   src={company.logoUrl}
@@ -138,12 +139,12 @@ function RouteComponent() {
             <div className="flex-1 min-w-0">
               <h2 className="text-xl font-bold truncate">{company.name}</h2>
               {company.industry && (
-                <p className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
                   <Building2 className="w-3.5 h-3.5" /> {company.industry}
                 </p>
               )}
               {company.location && (
-                <p className="text-sm text-gray-400 flex items-center gap-1">
+                <p className="text-sm text-slate-500 flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5" /> {company.location}
                 </p>
               )}
@@ -152,23 +153,23 @@ function RouteComponent() {
 
           <Badge className={`${cfg.color} border`}>{cfg.label}</Badge>
           {company.verificationStatus === "verified" && (
-            <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/40 flex items-center gap-1">
+            <Badge className="bg-blue-100 text-blue-700 border-blue-300 flex items-center gap-1">
               <ShieldCheck className="w-3 h-3" /> Verificada
             </Badge>
           )}
           {company.verificationStatus === "pending" && (
-            <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/40 flex items-center gap-1">
+            <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300 flex items-center gap-1">
               <FileCheck className="w-3 h-3" /> Verificação pendente
             </Badge>
           )}
           {company.verificationStatus === "rejected" && (
-            <Badge className="bg-red-500/20 text-red-300 border-red-500/40 flex items-center gap-1">
+            <Badge className="bg-red-100 text-red-700 border-red-300 flex items-center gap-1">
               Verificação rejeitada
             </Badge>
           )}
 
           {company.description && (
-            <p className="text-sm text-gray-300 leading-relaxed">{company.description}</p>
+            <p className="text-sm text-slate-700 leading-relaxed">{company.description}</p>
           )}
 
           {company.website && (
@@ -178,53 +179,53 @@ function RouteComponent() {
               }
               target="_blank"
               rel="noreferrer"
-              className="text-sm text-blue-400 flex items-center gap-1 hover:underline"
+              className="text-sm text-blue-600 flex items-center gap-1 hover:underline"
             >
               <Globe className="w-3.5 h-3.5" /> {company.website}
             </a>
           )}
 
-          <div className="pt-2 border-t border-gray-800 flex items-center gap-2 text-xs text-gray-400">
+          <div className="pt-2 border-t border-slate-200 flex items-center gap-2 text-xs text-slate-500">
             <Calendar className="w-3.5 h-3.5" />
             Criada em {formatDate(company.createdAt)}
           </div>
         </Card>
 
         {/* Estado da subscrição */}
-        <Card className="bg-gray-900 border-gray-800 p-5 space-y-4">
+        <Card className="bg-slate-50 border-slate-200 p-5 space-y-4">
           <div className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-yellow-400" />
+            <Crown className="w-5 h-5 text-yellow-600" />
             <h3 className="font-semibold">Subscrição da empresa</h3>
           </div>
 
           {company.subscriptionStatus === "trial" && (
             <>
-              <p className="text-sm text-gray-300">
+              <p className="text-sm text-slate-700">
                 Ainda estás no período experimental de 3 meses.
               </p>
-              <div className="text-2xl font-bold text-yellow-400">
+              <div className="text-2xl font-bold text-yellow-600">
                 {daysLeft(company.trialEndsAt)} dias restantes
               </div>
-              <p className="text-xs text-gray-400">Termina a {formatDate(company.trialEndsAt)}</p>
+              <p className="text-xs text-slate-500">Termina a {formatDate(company.trialEndsAt)}</p>
             </>
           )}
 
           {company.subscriptionStatus === "active" && (
             <>
-              <p className="text-sm text-gray-300">
+              <p className="text-sm text-slate-700">
                 Plano ativo:{" "}
-                <span className="font-semibold text-white capitalize">
+                <span className="font-semibold text-slate-900 capitalize">
                   {company.subscriptionPlan}
                 </span>
               </p>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-slate-500">
                 Renova a {formatDate(company.subscriptionEndsAt)}
               </p>
             </>
           )}
 
           {company.subscriptionStatus === "expired" && (
-            <div className="flex items-start gap-2 text-red-300 text-sm">
+            <div className="flex items-start gap-2 text-red-600 text-sm">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>A subscrição expirou. As vagas publicadas deixaram de ser visíveis.</span>
             </div>
@@ -250,18 +251,18 @@ function RouteComponent() {
           )}
 
           {isOwner && company.subscriptionStatus === "active" && (
-            <p className="text-sm text-green-400">✓ Empresa ativa — podes publicar vagas.</p>
+            <p className="text-sm text-green-600">✓ Empresa ativa — podes publicar vagas.</p>
           )}
         </Card>
 
         {/* Verificação legal */}
         {isOwner && company.verificationStatus !== "verified" && (
-          <Card className="bg-gray-900 border-gray-800 p-5 space-y-4">
+          <Card className="bg-slate-50 border-slate-200 p-5 space-y-4">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-blue-400" />
+              <ShieldCheck className="w-5 h-5 text-blue-600" />
               <h3 className="font-semibold">Verificação legal</h3>
             </div>
-            <p className="text-sm text-gray-300">
+            <p className="text-sm text-slate-700">
               Envia um documento legal (certidão permanente, registo comercial) para validarmos a
               tua empresa.
             </p>
@@ -269,7 +270,7 @@ function RouteComponent() {
               <Button
                 onClick={() => setShowVerify(true)}
                 variant="outline"
-                className="w-full border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
               >
                 Submeter documentos
               </Button>
@@ -280,7 +281,7 @@ function RouteComponent() {
                   value={legalDocUrl}
                   onChange={(e) => setLegalDocUrl(e.target.value)}
                   placeholder="Link do documento legal (PDF/imagem)"
-                  className="w-full bg-black text-white rounded-xl px-4 py-3 outline-none placeholder-gray-500 border border-gray-800 focus:border-blue-500 text-sm"
+                  className="w-full bg-white text-slate-900 rounded-xl px-4 py-3 outline-none placeholder-slate-400 border border-slate-200 focus:border-blue-500 text-sm"
                 />
                 <div className="flex gap-2">
                   <Button
@@ -293,7 +294,7 @@ function RouteComponent() {
                   <Button
                     onClick={() => setShowVerify(false)}
                     variant="outline"
-                    className="flex-1 border-gray-700 text-white hover:bg-gray-800"
+                    className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100"
                   >
                     Cancelar
                   </Button>
@@ -304,10 +305,10 @@ function RouteComponent() {
         )}
 
         {/* Vagas publicadas */}
-        <Card className="bg-gray-900 border-gray-800 p-5 space-y-4">
+        <Card className="bg-slate-50 border-slate-200 p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-blue-400" />
+              <Briefcase className="w-5 h-5 text-blue-600" />
               <h3 className="font-semibold">Vagas</h3>
             </div>
             {isOwner && company.isActive && (
@@ -323,10 +324,10 @@ function RouteComponent() {
             <div className="space-y-3">
               {company.jobs.map((job) => (
                 <Link key={job.id} to="/jobs/$id" params={{ id: String(job.id) }}>
-                  <div className="p-3 rounded-xl bg-gray-950 border border-gray-800 hover:border-blue-500/50 transition">
+                  <div className="p-3 rounded-xl bg-white border border-slate-200 hover:border-blue-400 transition">
                     <h4 className="font-semibold text-sm">{job.title}</h4>
-                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{job.description}</p>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">{job.description}</p>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
                       <span>{job.type}</span>
                       {job.location && <span>• {job.location}</span>}
                       <span>• {job.applicationsCount} candidaturas</span>
@@ -336,10 +337,11 @@ function RouteComponent() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">Ainda não há vagas publicadas.</p>
+            <p className="text-sm text-slate-500">Ainda não há vagas publicadas.</p>
           )}
         </Card>
       </div>
+      <BottomNav />
     </div>
   );
 }

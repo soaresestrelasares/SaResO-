@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "@/components/BottomNav";
-import { Bell, Heart, MessageCircle, UserPlus, Briefcase, Check } from "lucide-react";
+import { Bell, Heart, MessageCircle, UserPlus, Briefcase, Check, Star } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,6 +23,8 @@ function notificationIcon(type: Notification["type"]) {
       return <MessageCircle className="w-4 h-4 text-purple-400" />;
     case "job_application":
       return <Briefcase className="w-4 h-4 text-yellow-400" />;
+    case "subscribe":
+      return <Star className="w-4 h-4 text-orange-400" />;
     default:
       return <Bell className="w-4 h-4 text-gray-400" />;
   }
@@ -40,6 +42,8 @@ function notificationText(n: Notification): string {
       return `${n.actorDisplayName} enviou-te uma mensagem.`;
     case "job_application":
       return `${n.actorDisplayName} candidatou-se à tua vaga.`;
+    case "subscribe":
+      return `${n.actorDisplayName} subscreveu o teu perfil premium.`;
     default:
       return `${n.actorDisplayName} interagiu contigo.`;
   }

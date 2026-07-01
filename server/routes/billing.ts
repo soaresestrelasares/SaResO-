@@ -149,16 +149,21 @@ billingRouter.post(
       const creatorId = meta["creatorId"] ? parseInt(meta["creatorId"]) : null;
       const companyId = meta["companyId"] ? parseInt(meta["companyId"]) : null;
       const subId = typeof session.subscription === "string" ? session.subscription : null;
-      const periodEnd = subId
-        ? stripe.subscriptions.retrieve(subId).then((s) => {
-            const items = (s as unknown as { items?: { data?: { current_period_end?: number }[] } })
-              .items;
-            const ts = items?.data?.[0]?.current_period_end;
-            return ts ? new Date(ts * 1000) : null;
-          })
-        : Promise.resolve(null);
-      const resolvedPeriodEnd = await periodEnd;
-      const now = new Date();
+      let resolvedPeriodEnd: Date | null = null;
+      if (subId) {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(subId);
+          const sub = subscription as unknown as {
+            current_period_end?: number;
+            items?: { data?: Array<{ current_period_end?: number }> };
+          };
+          const ts = sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end;
+          resolvedPeriodEnd = ts ? new Date(ts * 1000) : null;
+        } catch (stripeErr) {
+          console.error("[billing] failed to retrieve subscription period end:", stripeErr);
+          resolvedPeriodEnd = null;
+        }
+      }
 
       if (plan === "premium_creator") {
         const expiresAt = resolvedPeriodEnd ?? new Date(now.getTime() + 30 * 86400000);

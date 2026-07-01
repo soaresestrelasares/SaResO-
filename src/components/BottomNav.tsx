@@ -1,11 +1,21 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Briefcase, MessageCircle, Plus, User, Compass } from "lucide-react";
+import { Home, Briefcase, MessageCircle, Plus, User, Compass, Bell } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 export function BottomNav() {
   const { user } = useAuth();
   const location = useLocation();
   const path = location.pathname;
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => api.getNotifications(),
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+  const unreadCount = notifications.filter((n) => !n.readAt).length;
 
   const staticItems = [
     { to: "/" as const, icon: Home, label: "Feed" },
@@ -13,6 +23,7 @@ export function BottomNav() {
     { to: "/jobs" as const, icon: Briefcase, label: "Emprego" },
     { to: "/upload" as const, icon: Plus, label: "", special: true },
     { to: "/messages" as const, icon: MessageCircle, label: "Chat" },
+    { to: "/notifications" as const, icon: Bell, label: "Notificações" },
   ];
 
   return (
@@ -49,12 +60,17 @@ export function BottomNav() {
           <Link
             key={item.to}
             to={item.to}
-            className="flex flex-col items-center gap-0.5 py-1 min-w-[48px]"
+            className="flex flex-col items-center gap-0.5 py-1 min-w-[48px] relative"
           >
             <item.icon
               className={`w-5 h-5 ${active ? "text-blue-400" : "text-gray-500"}`}
               strokeWidth={active ? 2.5 : 1.5}
             />
+            {item.to === "/notifications" && unreadCount > 0 && (
+              <span className="absolute top-0 right-2 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
             <span
               className={`text-[9px] ${active ? "text-blue-400 font-semibold" : "text-gray-500"}`}
             >

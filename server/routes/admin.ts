@@ -7,7 +7,7 @@ import { authMiddleware, AuthRequest } from "../middleware/auth.js";
 
 export const adminRouter = Router();
 
-const ADMIN_USERNAME = "soaresestrelasares";
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "soaresestrelasares";
 
 async function requireAdmin(req: AuthRequest, res: Response): Promise<boolean> {
   const db = getDb();

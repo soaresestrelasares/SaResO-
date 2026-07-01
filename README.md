@@ -9,12 +9,19 @@ Plataforma social global de vídeo curto com funcionalidades de emprego, mensage
 ## Funcionalidades
 
 - **Feed de vídeos** — conteúdo em scroll vertical (estilo TikTok)
+- **Stories** — stories de 24h no topo do feed
+- **Discover / Explore** — trending, hashtags, sugestões de perfis e feed Following
 - **Emprego** — empresas publicam vagas, utilizadores candidatam-se (estilo LinkedIn)
+- **Currículos** — candidatos criam CVs pesquisáveis pelas empresas
 - **Mensagens privadas** — chat em tempo real via Socket.io
 - **Chamadas privadas** — vídeo e áudio P2P via WebRTC
-- **Moderação** — filtragem automática de linguagem ofensiva em PT e EN
-- **Perfis de empresa** — logo, descrição, indústria, website
-- **Seguir utilizadores** — feed personalizado
+- **Lives** — transmissões ao vivo com controlo do anfitrião e moderação
+- **Moderação** — filtragem automática de palavrões, discurso de ódio, menções e links a outras plataformas
+- **Perfis públicos/privados** — premium e verificados são sempre públicos
+- **Verificação de empresas** — NIF/NIPC e documento legal obrigatórios
+- **Pagamentos** — subscrições premium e de empresas via Stripe
+- **Notificações** — likes, seguidores, mensagens, candidaturas, subscrições
+- **Denúncias** — denunciar vídeos e comentários
 
 ---
 
@@ -32,6 +39,8 @@ Plataforma social global de vídeo curto com funcionalidades de emprego, mensage
 | Real-time       | Socket.io (chat + sinalização WebRTC)             |
 | Chamadas        | WebRTC P2P (sem servidor de media)                |
 | Moderação       | bad-words (PT + EN)                               |
+| Upload          | Cloudinary (vídeos + imagens)                     |
+| Pagamentos      | Stripe Checkout + Webhooks                        |
 
 ---
 
@@ -88,7 +97,7 @@ O `pnpm start` serve ambos num único processo Node na porta definida por `PORT`
 1. Cria um projeto no [Railway](https://railway.app)
 2. Liga o repositório GitHub
 3. Adiciona um serviço MySQL
-4. Define as variáveis de ambiente: `DATABASE_URL`, `JWT_SECRET`
+4. Define as variáveis de ambiente: `DATABASE_URL`, `JWT_SECRET`, etc.
 5. Railway faz deploy automático a cada push
 
 ### Render
@@ -96,8 +105,8 @@ O `pnpm start` serve ambos num único processo Node na porta definida por `PORT`
 1. Cria um Web Service no [Render](https://render.com)
 2. Build command: `pnpm install && pnpm build`
 3. Start command: `pnpm start`
-4. Adiciona um banco PostgreSQL ou usa MySQL externo
-5. Define `DATABASE_URL`, `JWT_SECRET` nas variáveis de ambiente
+4. Adiciona um banco MySQL externo (ex: PlanetScale, Railway)
+5. Define `DATABASE_URL`, `JWT_SECRET` e outras variáveis
 
 ### VPS (Ubuntu/Debian)
 
@@ -131,6 +140,11 @@ docker build -t sareso .
 docker run -p 3000:3000 \
   -e DATABASE_URL="mysql://user:pass@host:3306/sareso" \
   -e JWT_SECRET="chave_secreta" \
+  -e STRIPE_SECRET_KEY="sk_..." \
+  -e STRIPE_WEBHOOK_SECRET="whsec_..." \
+  -e CLOUDINARY_CLOUD_NAME="..." \
+  -e CLOUDINARY_API_KEY="..." \
+  -e CLOUDINARY_API_SECRET="..." \
   sareso
 ```
 
@@ -138,15 +152,31 @@ docker run -p 3000:3000 \
 
 ## Variáveis de ambiente
 
-| Variável       | Obrigatório | Descrição                                       |
-| -------------- | ----------- | ----------------------------------------------- |
-| `DATABASE_URL` | Sim         | URL de ligação MySQL                            |
-| `JWT_SECRET`   | Sim         | Chave secreta para tokens JWT (mínimo 32 chars) |
-| `PORT`         | Não         | Porta do servidor (padrão: 3000)                |
+| Variável                      | Obrigatório | Descrição                                                           |
+| ----------------------------- | ----------- | ------------------------------------------------------------------- |
+| `DATABASE_URL`                | Sim         | URL de ligação MySQL                                                |
+| `JWT_SECRET`                  | Sim         | Chave secreta para tokens JWT (mínimo 32 caracteres)                |
+| `PORT`                        | Não         | Porta do servidor (padrão: 3000)                                    |
+| `STRIPE_SECRET_KEY`           | Não\*       | Chave secreta Stripe (necessária para pagamentos reais)             |
+| `STRIPE_WEBHOOK_SECRET`       | Não\*       | Segredo do webhook Stripe (necessário para ativação de subscrições) |
+| `STRIPE_PRICE_PREMIUM`        | Não\*       | ID do price Stripe para subscrição premium de criador               |
+| `STRIPE_PRICE_SUBSCRIBE`      | Não\*       | ID do price Stripe para subscrição a um criador                     |
+| `STRIPE_PRICE_COMPANY_MONTH`  | Não\*       | ID do price Stripe para subscrição mensal de empresa                |
+| `STRIPE_PRICE_COMPANY_ANNUAL` | Não\*       | ID do price Stripe para subscrição anual de empresa                 |
+| `CLOUDINARY_CLOUD_NAME`       | Não\*       | Nome da cloud Cloudinary (necessário para upload de ficheiros)      |
+| `CLOUDINARY_API_KEY`          | Não\*       | API key Cloudinary                                                  |
+| `CLOUDINARY_API_SECRET`       | Não\*       | API secret Cloudinary                                               |
+| `ADMIN_USERNAME`              | Não         | Username com acesso ao painel de admin (padrão: soaresestrelasares) |
+
+\* Não obrigatórias para correr a app localmente, mas necessárias para funcionalidades de produção.
 
 ---
 
 ## Base de dados — Migrações
+
+Se estiveres a usar o fluxo de desenvolvimento local com `server/migrate.ts`, as tabelas são criadas automaticamente ao iniciar o servidor.
+
+Caso contrário, usa:
 
 ```bash
 # Gerar migração após alterar server/schema.ts
@@ -157,6 +187,46 @@ pnpm db:migrate
 ```
 
 As migrações ficam versionadas em `drizzle/`.
+
+### Migrações manuais para bases já existentes
+
+Se já tens uma base de dados em produção e só precisas de adicionar as colunas novas, corre:
+
+```sql
+ALTER TABLE users
+  ADD COLUMN is_private INT NOT NULL DEFAULT 0,
+  ADD COLUMN location VARCHAR(200) DEFAULT '';
+
+ALTER TABLE videos
+  ADD COLUMN location VARCHAR(200) DEFAULT '',
+  ADD COLUMN music_url VARCHAR(500) DEFAULT '',
+  ADD COLUMN music_title VARCHAR(200) DEFAULT '';
+
+ALTER TABLE stories
+  ADD COLUMN location VARCHAR(200) DEFAULT '',
+  ADD COLUMN music_url VARCHAR(500) DEFAULT '';
+
+ALTER TABLE companies
+  ADD COLUMN verification_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  ADD COLUMN legal_doc_url VARCHAR(500) DEFAULT '',
+  ADD COLUMN tax_id VARCHAR(100) DEFAULT '';
+
+CREATE TABLE IF NOT EXISTS resumes (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL UNIQUE,
+  summary VARCHAR(2000) DEFAULT '',
+  skills VARCHAR(2000) DEFAULT '',
+  experience TEXT,
+  education TEXT,
+  desired_role VARCHAR(200) DEFAULT '',
+  desired_location VARCHAR(200) DEFAULT '',
+  remote INT NOT NULL DEFAULT 0,
+  cv_url VARCHAR(500) DEFAULT '',
+  is_public INT NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ---
 

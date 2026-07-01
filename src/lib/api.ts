@@ -151,8 +151,11 @@ export const api = {
     }),
 
   // Reports
-  report: (data: { contentType: string; contentId: number; reason: string }) =>
-    request<{ ok: boolean }>("/reports", { method: "POST", body: JSON.stringify(data) }),
+  reportContent: (contentType: string, contentId: number, reason: string) =>
+    request<{ ok: boolean }>("/reports", {
+      method: "POST",
+      body: JSON.stringify({ contentType, contentId, reason }),
+    }),
 
   // Notifications
   getNotifications: () => request<Notification[]>("/notifications"),
