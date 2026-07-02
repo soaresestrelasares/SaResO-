@@ -20,7 +20,31 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": [
+        "warn",
+        {
+          allowConstantExport: true,
+          allowExportNames: [
+            "cva",
+            "useFormField",
+            "useFormContext",
+            "useSidebar",
+            "useAuth",
+            "navigationMenuTriggerStyle",
+            "buttonVariants",
+            "toggleVariants",
+            "badgeVariants",
+            "FormField",
+            "Form",
+            "FormItem",
+            "FormLabel",
+            "FormControl",
+            "FormDescription",
+            "FormMessage",
+          ],
+        },
+      ],
+      "react-hooks/exhaustive-deps": "warn",
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
@@ -28,6 +52,12 @@ export default tseslint.config(
     files: ["server/**/*.ts"],
     languageOptions: {
       globals: globals.node,
+    },
+  },
+  {
+    files: ["src/components/ui/*.tsx"],
+    rules: {
+      "react-refresh/only-export-components": "off",
     },
   },
   eslintPluginPrettier,

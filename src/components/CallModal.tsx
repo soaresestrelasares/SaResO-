@@ -47,7 +47,7 @@ export function CallModal({
   const formatDuration = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-  const getMedia = async () => {
+  const getMedia = useCallback(async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: true,
       video: callType === "video",
@@ -55,7 +55,7 @@ export function CallModal({
     localStreamRef.current = stream;
     if (localVideoRef.current) localVideoRef.current.srcObject = stream;
     return stream;
-  };
+  }, [callType]);
 
   const createPC = (stream: MediaStream, remoteId: number) => {
     const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
@@ -108,7 +108,7 @@ export function CallModal({
       }
     })();
     return cleanup;
-  }, []);
+  }, [callState, targetUserId, callType, cleanup, onClose, getMedia]);
 
   const acceptCall = async () => {
     try {

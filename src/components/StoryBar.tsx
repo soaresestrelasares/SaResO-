@@ -79,7 +79,10 @@ export function StoryViewer({ stories, startIndex, onClose }: StoryViewerProps) 
   });
 
   useEffect(() => {
-    if (current) viewMutation.mutate(current.id);
+    if (current) {
+      viewMutation.mutate(current.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id]);
 
   useEffect(() => {
