@@ -44,6 +44,7 @@ export function createApp() {
   const app = express();
 
   app.disable("x-powered-by");
+  app.set("trust proxy", serverConfig.isProduction ? 1 : false);
 
   // Cabeçalhos de segurança HTTP
   app.use(
