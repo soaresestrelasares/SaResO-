@@ -63,7 +63,8 @@ authRouter.post("/register", async (req, res) => {
         isPrivate: false,
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("[auth/register] error:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
     res.status(500).json({ error: "Erro ao criar conta. Tenta novamente." });
   }
 });
