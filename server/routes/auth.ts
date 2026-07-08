@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { getDb } from "../db.js";
 import { users, passwordResetTokens } from "../schema.js";
 import { eq, sql } from "drizzle-orm";
-import { authMiddleware, signToken, AuthRequest } from "../middleware/auth.js";
+import { authMiddleware, signToken, type AuthRequest } from "../middleware/auth.js";
 
 export const authRouter = Router();
 
