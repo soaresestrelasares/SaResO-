@@ -230,6 +230,16 @@ CREATE TABLE IF NOT EXISTS resumes (
 
 ---
 
+## Nota importante
+
+O sistema está totalmente implementado e pronto a produção. O servidor cria automaticamente todas as tabelas necessárias ao arrancar (via `server/migrate.ts`), pelo que só precisas de configurar a variável de ambiente `DATABASE_URL` e o sistema estará operacional.
+
+Para bases de dados já existentes, podes usar as migrações manuais documentadas acima ou o fluxo `pnpm db:migrate` com as migrações versionadas em `drizzle/`.
+
+Certifica-te também de definir `JWT_SECRET` e, para funcionalidades de pagamentos/upload, as credenciais Stripe e Cloudinary.
+
+---
+
 ## Direitos Autorais
 
 **© 2026 SaResO. Todos os direitos reservados.**
