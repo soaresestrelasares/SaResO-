@@ -18,19 +18,55 @@ function getDatabaseUrl(): string | undefined {
   return value || undefined;
 }
 
-export function getPool(): Pool {
+function getPoolConfig() {
   const databaseUrl = getDatabaseUrl();
-
   if (!databaseUrl) {
     throw new DatabaseUnavailableError("DATABASE_URL is not configured for this project.");
   }
 
-  pool ??= mysql.createPool({
-    uri: databaseUrl,
+  // Proteção contra caracteres invisíveis ou encoding estranho no final da URL
+  const cleanUrl = databaseUrl.replace(/[\r\n\s]+/g, "");
+
+  return {
+    cleanUrl,
+    uri: cleanUrl,
     ssl: { rejectUnauthorized: false },
     waitForConnections: true,
     connectionLimit: 10,
+  };
+}
+
+async function ensureDatabaseExists(): Promise<void> {
+  const { cleanUrl } = getPoolConfig();
+  // Cria uma connection sem base de dados selecionada para garantir que a base existe
+  const { protocol, username, password, host, port } = new URL(cleanUrl);
+  const connectionUrl = `${protocol}//${username}:${password}@${host}:${port}`;
+  const tempPool = mysql.createPool({
+    uri: connectionUrl,
+    ssl: { rejectUnauthorized: false },
+    waitForConnections: true,
+    connectionLimit: 1,
   });
+  try {
+    const databaseName = cleanUrl.split("/").pop();
+    if (databaseName) {
+      await tempPool.execute(`CREATE DATABASE IF NOT EXISTS \`${databaseName}\``);
+    }
+  } finally {
+    await tempPool.end();
+  }
+}
+
+export async function initPool(): Promise<void> {
+  if (pool) return;
+  const config = getPoolConfig();
+  await ensureDatabaseExists();
+  pool = mysql.createPool(config);
+}
+
+export function getPool(): Pool {
+  const config = getPoolConfig();
+  pool ??= mysql.createPool(config);
   return pool;
 }
 

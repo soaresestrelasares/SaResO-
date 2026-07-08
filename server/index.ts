@@ -2,9 +2,11 @@ import http from "http";
 import { createApp } from "./app.js";
 import { serverConfig } from "./config.js";
 import { initSocket } from "./socket.js";
+import { initPool } from "./db.js";
 import { ensureTables } from "./migrate.js";
 
 try {
+  await initPool();
   await ensureTables();
 } catch (err) {
   console.error("[sareso] FATAL: Failed to create tables:", JSON.stringify(err));
