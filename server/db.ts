@@ -38,9 +38,12 @@ function getPoolConfig() {
 
 async function ensureDatabaseExists(): Promise<void> {
   const { cleanUrl } = getPoolConfig();
-  // Cria uma connection sem base de dados selecionada para garantir que a base existe
-  const { protocol, username, password, host, port } = new URL(cleanUrl);
-  const connectionUrl = `${protocol}//${username}:${password}@${host}:${port}`;
+  const parsed = new URL(cleanUrl);
+  const username = encodeURIComponent(parsed.username);
+  const password = encodeURIComponent(parsed.password);
+  const host = parsed.hostname;
+  const port = parsed.port || "3306";
+  const connectionUrl = `mysql://${username}:${password}@${host}:${port}`;
   const tempPool = mysql.createPool({
     uri: connectionUrl,
     ssl: { rejectUnauthorized: false },
@@ -48,7 +51,7 @@ async function ensureDatabaseExists(): Promise<void> {
     connectionLimit: 1,
   });
   try {
-    const databaseName = cleanUrl.split("/").pop();
+    const databaseName = parsed.pathname.replace(/^\//, "");
     if (databaseName) {
       await tempPool.execute(`CREATE DATABASE IF NOT EXISTS \`${databaseName}\``);
     }
