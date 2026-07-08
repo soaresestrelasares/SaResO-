@@ -29,7 +29,7 @@ Plataforma social global de vídeo curto com funcionalidades de emprego, mensage
 
 | Camada          | Tecnologias                                       |
 | --------------- | ------------------------------------------------- |
-| Frontend        | React 18, TypeScript, Vite, Tailwind CSS          |
+| Frontend        | React 19, TypeScript, Vite, Tailwind CSS          |
 | Routing         | TanStack Router (file-based, code splitting)      |
 | Estado servidor | TanStack Query                                    |
 | Componentes     | shadcn/ui + Radix UI                              |
