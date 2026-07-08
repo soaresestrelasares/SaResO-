@@ -31,17 +31,11 @@ function getPoolConfig() {
     .replace(/:([0-9]{2,5}):([0-9]{2,5})(\/|$)/, ":$1$2") // evita duplicação de porta
     .trim();
 
-  return {
-    cleanUrl,
-    uri: cleanUrl,
-    ssl: { rejectUnauthorized: false },
-    waitForConnections: true,
-    connectionLimit: 10,
-  };
+  return cleanUrl;
 }
 
 async function ensureDatabaseExists(): Promise<void> {
-  const { cleanUrl } = getPoolConfig();
+  const cleanUrl = getPoolConfig();
   const parsed = new URL(cleanUrl);
   const username = encodeURIComponent(parsed.username);
   const password = encodeURIComponent(parsed.password);
@@ -66,14 +60,22 @@ async function ensureDatabaseExists(): Promise<void> {
 
 export async function initPool(): Promise<void> {
   if (pool) return;
-  const config = getPoolConfig();
   await ensureDatabaseExists();
-  pool = mysql.createPool(config);
+  pool = mysql.createPool({
+    uri: getPoolConfig(),
+    ssl: { rejectUnauthorized: false },
+    waitForConnections: true,
+    connectionLimit: 10,
+  });
 }
 
 export function getPool(): Pool {
-  const config = getPoolConfig();
-  pool ??= mysql.createPool(config);
+  pool ??= mysql.createPool({
+    uri: getPoolConfig(),
+    ssl: { rejectUnauthorized: false },
+    waitForConnections: true,
+    connectionLimit: 10,
+  });
   return pool;
 }
 
