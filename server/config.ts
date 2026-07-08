@@ -11,5 +11,7 @@ export const serverConfig = {
   indexHtmlPath: path.resolve(serverDir, "..", "client", "index.html"),
   isProduction,
   serviceName,
-  port: Number(process.env.PORT) || (isProduction ? 3000 : 4001),
+  port:
+    (isProduction ? Number(process.env.PORT) : Number(process.env.API_PORT)) ||
+    (isProduction ? 3000 : 4001),
 };

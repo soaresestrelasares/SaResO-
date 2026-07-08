@@ -30,6 +30,7 @@ const authLimiter = rateLimit({
   message: { error: "Demasiadas tentativas. Tenta novamente em 15 minutos." },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
 });
 
 const apiLimiter = rateLimit({
@@ -38,13 +39,14 @@ const apiLimiter = rateLimit({
   message: { error: "Demasiados pedidos. Tenta novamente em 1 minuto." },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
 });
 
 export function createApp() {
   const app = express();
 
   app.disable("x-powered-by");
-  app.set("trust proxy", serverConfig.isProduction ? 1 : false);
+  app.set("trust proxy", true);
 
   // Cabeçalhos de segurança HTTP
   app.use(
