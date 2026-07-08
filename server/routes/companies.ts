@@ -76,6 +76,22 @@ companiesRouter.get("/mine", authMiddleware, async (req: AuthRequest, res) => {
   res.json(rows.map((r) => ({ ...normalizeCompany(r), isActive: companyIsActive(r) })));
 });
 
+// Public search
+companiesRouter.get("/search", async (req, res) => {
+  const db = getDb();
+  const q = ((req.query.q as string) || "").toLowerCase();
+  if (!q || q.length < 2) {
+    res.status(400).json({ error: "Pesquisa demasiado curta." });
+    return;
+  }
+  const rows = await db
+    .select()
+    .from(companies)
+    .where(sql`LOWER(name) LIKE ${"%" + q + "%"} OR LOWER(industry) LIKE ${"%" + q + "%"}`)
+    .limit(20);
+  res.json(rows.map((r) => normalizeCompany(r)));
+});
+
 // Get company by id
 companiesRouter.get("/:id", async (req, res) => {
   const db = getDb();

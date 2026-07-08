@@ -16,6 +16,26 @@ import { onlineUsers } from "../socket.js";
 
 export const usersRouter = Router();
 
+usersRouter.get("/search", authMiddleware, async (req: AuthRequest, res) => {
+  const db = getDb();
+  const q = ((req.query.q as string) || "").toLowerCase();
+  if (!q || q.length < 2) {
+    res.status(400).json({ error: "Pesquisa demasiado curta." });
+    return;
+  }
+  const rows = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(users)
+    .where(sql`LOWER(username) LIKE ${"%" + q + "%"} OR LOWER(display_name) LIKE ${"%" + q + "%"}`)
+    .limit(20);
+  res.json(rows.map((u) => ({ ...u, id: Number(u.id) })));
+});
+
 usersRouter.get("/:username", optionalAuthQuery, async (req: AuthRequest, res) => {
   const db = getDb();
   const [user] = await db
