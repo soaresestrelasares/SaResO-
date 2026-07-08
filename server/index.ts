@@ -9,8 +9,7 @@ try {
   await initPool();
   await ensureTables();
 } catch (err) {
-  console.error("[sareso] FATAL: Failed to create tables:", JSON.stringify(err));
-  process.exit(1);
+  console.error("[sareso] Failed to prepare database, continuing anyway:", JSON.stringify(err));
 }
 
 const app = createApp();

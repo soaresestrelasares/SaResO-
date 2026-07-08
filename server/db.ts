@@ -25,7 +25,11 @@ function getPoolConfig() {
   }
 
   // Proteção contra caracteres invisíveis ou encoding estranho no final da URL
-  const cleanUrl = databaseUrl.replace(/[\r\n\s]+/g, "");
+  const cleanUrl = databaseUrl
+    .replace(/[\r\n]+/g, "")
+    .replace(/\s+/g, "")
+    .replace(/:([0-9]{2,5}):([0-9]{2,5})(\/|$)/, ":$1$2") // evita duplicação de porta
+    .trim();
 
   return {
     cleanUrl,
