@@ -60,9 +60,11 @@ async function ensureDatabaseExists(): Promise<void> {
 
 export async function initPool(): Promise<void> {
   if (pool) return;
+  const databaseUrl = getPoolConfig();
+  console.log("[db] DATABASE_URL processed:", databaseUrl.replace(/:[^:@]+@/, ":***@"));
   await ensureDatabaseExists();
   pool = mysql.createPool({
-    uri: getPoolConfig(),
+    uri: databaseUrl,
     ssl: { rejectUnauthorized: false },
     waitForConnections: true,
     connectionLimit: 10,
@@ -70,8 +72,9 @@ export async function initPool(): Promise<void> {
 }
 
 export function getPool(): Pool {
+  const databaseUrl = getPoolConfig();
   pool ??= mysql.createPool({
-    uri: getPoolConfig(),
+    uri: databaseUrl,
     ssl: { rejectUnauthorized: false },
     waitForConnections: true,
     connectionLimit: 10,
