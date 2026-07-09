@@ -90,23 +90,43 @@ O `pnpm start` serve ambos num único processo Node na porta definida por `PORT`
 
 ---
 
-## Deploy (opções recomendadas)
+## Deploy (opção recomendada: Railway)
 
-### Railway
+O Railway é a opção recomendada porque permite colocar a app e a base de dados MySQL no mesmo projeto, usando ligação privada e variáveis de ambiente partilhadas.
 
-1. Cria um projeto no [Railway](https://railway.app)
-2. Liga o repositório GitHub
-3. Adiciona um serviço MySQL
-4. Define as variáveis de ambiente: `DATABASE_URL`, `JWT_SECRET`, etc.
-5. Railway faz deploy automático a cada push
+### Railway (passo a passo)
+
+1. Vai a [railway.app](https://railway.app) e inicia sessão com GitHub.
+2. Cria um **New Project**.
+3. Dentro do projeto, clica em **Add** → **Database** → **Add MySQL**.
+4. Espera que o MySQL fique `Available`.
+5. Clica em **Add** → **GitHub Repo** e escolhe o repositório `soaresestrelasares/SaResO-`.
+6. Vai às **Variables** do serviço da app e adiciona:
+   - `DATABASE_URL` com o valor `${{ MySQL.MYSQL_URL }}` (Railway resolve automaticamente).
+   - `JWT_SECRET` com uma string aleatória de pelo menos 32 caracteres.
+   - (Opcional) `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` para uploads.
+   - (Opcional) `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e price IDs para pagamentos.
+7. Clica em **Deploy**. O Railway compila com `pnpm build` e arranca com `pnpm start`.
+8. Quando o deploy terminar, abre o URL gerado e testa `/api/health`.
+9. Para criar as tabelas, abre um **Shell** no serviço da app (Railway) e corre:
+
+```bash
+pnpm db:migrate
+```
+
+> Se já aplicaste as migrações noutro ambiente contra a mesma base de dados, não precisas de repetir.
 
 ### Render
 
-1. Cria um Web Service no [Render](https://render.com)
-2. Build command: `pnpm install && pnpm build`
-3. Start command: `pnpm start`
-4. Adiciona um banco MySQL externo (ex: PlanetScale, Railway)
-5. Define `DATABASE_URL`, `JWT_SECRET` e outras variáveis
+> Nota: o plano gratuito do Render não permite Shell/SSH, pelo que não é possível correr migrações diretamente no servidor. Usa o Railway para ter app + base de dados no mesmo projeto.
+
+Se ainda preferires o Render:
+
+1. Cria um Web Service no [Render](https://render.com).
+2. Build command: `pnpm install --frozen-lockfile && pnpm build`.
+3. Start command: `pnpm start`.
+4. Liga a base de dados MySQL (pode ser a mesma do Railway).
+5. Define `DATABASE_URL`, `JWT_SECRET` e outras variáveis.
 
 ### VPS (Ubuntu/Debian)
 
